@@ -1,3 +1,4 @@
+<!-- v1.0.0 vom 22.08.2026 21:04 Uhr -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -53,18 +54,6 @@
       let myChoices = {};
       let editingName = null;
       let activePoll = null;
-
-      const getCol = (n) => {
-        let h = 0;
-        for (let i = 0; i < n.length; i++) h = n.charCodeAt(i) + ((h << 5) - h);
-        const cls = [
-          'bg-pink-100 text-pink-800', 'bg-purple-100 text-purple-800', 
-          'bg-indigo-100 text-indigo-800', 'bg-blue-100 text-blue-800', 
-          'bg-teal-100 text-teal-800', 'bg-emerald-100 text-emerald-800', 
-          'bg-orange-100 text-orange-800', 'bg-rose-100 text-rose-800'
-        ];
-        return cls[Math.abs(h) % cls.length];
-      };
 
       window.selectChoice = (date, choice, btnId) => {
         myChoices[date] = choice;
@@ -156,11 +145,21 @@
         const selectEl = document.getElementById("chatUserSelect");
         const container = document.getElementById("chatNewNameContainer");
         if (selectEl && container) {
-          if (selectEl.value === "__new" || selectEl.value === "") {
+          if (selectEl.value === "__new") {
             container.classList.remove("hidden");
           } else {
             container.classList.add("hidden");
           }
+        }
+      };
+
+      window.checkAdminPassword = (e) => {
+        const details = e.currentTarget.parentElement;
+        if (details.open) return; // Frei schließen erlauben
+        const pw = prompt("Bitte Admin-Passwort eingeben:");
+        if (pw !== "Admin") {
+          alert("Falsches Passwort!");
+          e.preventDefault(); // Verhindert das Öffnen
         }
       };
 
@@ -173,16 +172,16 @@
         let sender = "";
 
         if (selectEl) {
-          if (selectEl.value === "__new" || selectEl.value === "") {
+          if (selectEl.value === "__new") {
             sender = newNameEl ? newNameEl.value.trim() : "";
           } else {
-            sender = selectEl.value;
+            sender = selectEl.value; // Bleibt leer, wenn "Wer schreibt?" ausgewählt ist
           }
         } else {
           sender = newNameEl ? newNameEl.value.trim() : "";
         }
 
-        if (!sender) return alert("Bitte wähle einen Namen aus oder gib einen neuen Namen ein!");
+        if (!sender) return alert("Bitte wähle deinen Namen aus oder gib einen neuen Namen ein!");
 
         const messages = activePoll.messages || [];
         messages.push({ name: sender, text, timestamp: Date.now() });
@@ -190,11 +189,22 @@
         document.getElementById("chatTextInput").value = "";
       };
 
+      const getCol = (n) => {
+        let h = 0;
+        for (let i = 0; i < n.length; i++) h = n.charCodeAt(i) + ((h << 5) - h);
+        const cls = [
+          'bg-pink-100 text-pink-800', 'bg-purple-100 text-purple-800', 
+          'bg-indigo-100 text-indigo-800', 'bg-blue-100 text-blue-800', 
+          'bg-teal-100 text-teal-800', 'bg-emerald-100 text-emerald-800', 
+          'bg-orange-100 text-orange-800', 'bg-rose-100 text-rose-800'
+        ];
+        return cls[Math.abs(h) % cls.length];
+      };
+
       onSnapshot(doc(db, "polls", pollId), (snapshot) => {
         if (!snapshot.exists()) return appDiv.innerHTML = "Nicht gefunden.";
         activePoll = snapshot.data();
         const voteList = activePoll.votes || [];
-        const savedName = localStorage.getItem('voter_name_' + pollId) || "";
 
         const incompleteVoters = [];
         voteList.forEach(v => {
@@ -238,7 +248,7 @@
         });
         html += `<button onclick="saveVote()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl w-full mt-2 font-bold shadow-lg shadow-indigo-100 transition-all">Stimme speichern</button>`;
 
-        // --- CHAT MODULE ---
+        // Chat Modul
         const msgList = activePoll.messages || [];
         html += `<div class="mt-6 border-t border-slate-100 pt-4"><h3 class="text-xs font-bold text-slate-700 mb-2">💬 Chat & Kommentare</h3>`;
         html += `<div class="max-h-32 overflow-y-auto mb-3 p-2 bg-slate-50 border border-slate-100 rounded-xl space-y-1.5 text-[11px] outline-none">`;
@@ -251,16 +261,16 @@
         }
         html += `</div>`;
         
-        // Name selector logic for chat
+        // Chat-Namen-Auswahl ohne Standardauswahl
         html += `<div class="space-y-1 text-xs">`;
         if (voteList.length > 0) {
           html += `
             <select id="chatUserSelect" onchange="toggleChatNameInput()" class="border border-slate-200 p-2 w-full rounded-xl text-slate-700 bg-white">
-              ${savedName ? `<option value="${savedName}">Schreiben als: ${savedName}</option>` : '<option value="" disabled selected>Wer schreibt?</option>'}
-              ${voteList.filter(v => v.name !== savedName).map(v => `<option value="${v.name}">${v.name}</option>`).join('')}
+              <option value="" disabled selected>Wer schreibt?</option>
+              ${voteList.map(v => `<option value="${v.name}">${v.name}</option>`).join('')}
               <option value="__new">Neuer Name...</option>
             </select>
-            <div id="chatNewNameContainer" class="${savedName ? 'hidden' : ''} mt-1">
+            <div id="chatNewNameContainer" class="hidden mt-1">
               <input id="chatNewNameInput" placeholder="Dein Name für den Chat" class="border border-slate-200 p-2 w-full rounded-xl bg-white">
             </div>`;
         } else {
@@ -331,10 +341,10 @@
             </div>`;
         }
 
-        // Admin-Bereich
+        // Admin-Bereich mit Passwortschutz
         html += `
           <details class="mt-6 border-t border-slate-100 pt-4">
-            <summary class="cursor-pointer text-xs font-bold text-slate-500 select-none flex justify-between items-center hover:text-slate-800 transition-all">
+            <summary onclick="checkAdminPassword(event)" class="cursor-pointer text-xs font-bold text-slate-500 select-none flex justify-between items-center hover:text-slate-800 transition-all">
               <span>⚙️ Admin-Bereich (Termine & Titel verwalten)</span>
               <span class="text-[10px] text-slate-400">▼ Klick zum Ausklappen</span>
             </summary>
