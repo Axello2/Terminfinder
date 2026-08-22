@@ -1,4 +1,4 @@
-<!-- v1.0.0 vom 22.08.2026 21:04 Uhr -->
+<!-- v1.0.1 vom 22.08.2026 21:18 Uhr -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -66,8 +66,9 @@
         const vote = activePoll.votes.find(v => v.name === name);
         if (vote) {
           myChoices = { ...vote.choices };
-          document.getElementById("voterName").value = name;
-          document.getElementById("voterName").disabled = true;
+          const voterInput = document.getElementById("voterName");
+          voterInput.value = name;
+          voterInput.disabled = true;
           document.getElementById("cancelEdit").classList.remove("hidden");
           activePoll.dates.forEach((d, idx) => {
             document.querySelectorAll(`[data-date="${d}"]`).forEach(b => b.classList.remove("ring-4", "ring-indigo-500/50"));
@@ -76,6 +77,8 @@
             if (choice === 'not') document.getElementById(`m-${idx}`).classList.add("ring-4", "ring-indigo-500/50");
             if (choice === 'nein') document.getElementById(`n-${idx}`).classList.add("ring-4", "ring-indigo-500/50");
           });
+          // Sanft nach oben scrollen und Eingabe zentrieren
+          voterInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       };
 
@@ -155,11 +158,11 @@
 
       window.checkAdminPassword = (e) => {
         const details = e.currentTarget.parentElement;
-        if (details.open) return; // Frei schließen erlauben
+        if (details.open) return;
         const pw = prompt("Bitte Admin-Passwort eingeben:");
         if (pw !== "Admin") {
           alert("Falsches Passwort!");
-          e.preventDefault(); // Verhindert das Öffnen
+          e.preventDefault();
         }
       };
 
@@ -175,7 +178,7 @@
           if (selectEl.value === "__new") {
             sender = newNameEl ? newNameEl.value.trim() : "";
           } else {
-            sender = selectEl.value; // Bleibt leer, wenn "Wer schreibt?" ausgewählt ist
+            sender = selectEl.value;
           }
         } else {
           sender = newNameEl ? newNameEl.value.trim() : "";
@@ -205,6 +208,7 @@
         if (!snapshot.exists()) return appDiv.innerHTML = "Nicht gefunden.";
         activePoll = snapshot.data();
         const voteList = activePoll.votes || [];
+        const savedName = localStorage.getItem('voter_name_' + pollId) || "";
 
         const incompleteVoters = [];
         voteList.forEach(v => {
@@ -261,7 +265,6 @@
         }
         html += `</div>`;
         
-        // Chat-Namen-Auswahl ohne Standardauswahl
         html += `<div class="space-y-1 text-xs">`;
         if (voteList.length > 0) {
           html += `
@@ -341,7 +344,7 @@
             </div>`;
         }
 
-        // Admin-Bereich mit Passwortschutz
+        // Admin-Bereich
         html += `
           <details class="mt-6 border-t border-slate-100 pt-4">
             <summary onclick="checkAdminPassword(event)" class="cursor-pointer text-xs font-bold text-slate-500 select-none flex justify-between items-center hover:text-slate-800 transition-all">
