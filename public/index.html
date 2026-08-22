@@ -12,7 +12,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, addDoc, collection, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, addDoc, collection, onSnapshot, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAJz3O1u8Es3UiEU-UPGu_cdS3YkojAWqU",
@@ -30,7 +30,7 @@
     const pollId = urlParams.get("id");
 
     if (!pollId) {
-      // Admin-Ansicht: Umfrage erstellen
+      // Admin-Ansicht
       appDiv.innerHTML = `
         <h1 class="text-xl font-bold mb-4 font-sans text-gray-800">Neue Terminfindung</h1>
         <input id="title" placeholder="Titel der Umfrage" class="border p-2 w-full mb-3 rounded">
@@ -49,14 +49,14 @@
         const docRef = await addDoc(collection(db, "polls"), { title, dates, votes: [] });
         appDiv.innerHTML = `
           <p class="mb-2 font-semibold text-green-600">Erfolgreich erstellt!</p>
-          <p class="mb-2 text-sm text-gray-600">Teile diesen Link mit den Teilnehmern:</p>
           <input readonly value="${window.location.origin}?id=${docRef.id}" class="border p-2 w-full bg-gray-100 rounded text-sm">
         `;
       };
     } else {
-      // Teilnehmer-Ansicht: Abstimmen
+      // Teilnehmer-Ansicht
       const myChoices = {};
-      
+      const savedName = localStorage.getItem('voter_name_' + pollId) || "";
+
       window.selectChoice = (date, choice, btnId) => {
         myChoices[date] = choice;
         document.querySelectorAll(`[data-date="${date}"]`).forEach(b => b.classList.remove("ring-4", "ring-blue-600"));
@@ -66,35 +66,53 @@
       window.saveVote = async () => {
         const name = document.getElementById("voterName").value.trim();
         if (!name) return alert("Bitte gib deinen Namen ein!");
-        if (Object.keys(myChoices).length === 0) return alert("Bitte wähle mindestens eine Option aus!");
-        await updateDoc(doc(db, "polls", pollId), {
-          votes: arrayUnion({ name, choices: myChoices })
-        });
+        if (Object.keys(myChoices).length === 0) return alert("Bitte wähle Optionen aus!");
+        
+        const pollDoc = await getDoc(doc(db, "polls", pollId));
+        const currentVotes = pollDoc.data().votes || [];
+        // Vorhandene Stimme des Nutzers entfernen (falls vorhanden)
+        const filteredVotes = currentVotes.filter(v => v.name.toLowerCase() !== name.toLowerCase());
+        filteredVotes.push({ name, choices: myChoices });
+
+        await updateDoc(doc(db, "polls", pollId), { votes: filteredVotes });
+        localStorage.setItem('voter_name_' + pollId, name);
         alert("Deine Stimme wurde erfolgreich gespeichert!");
       };
 
       onSnapshot(doc(db, "polls", pollId), (snapshot) => {
         if (!snapshot.exists()) return appDiv.innerHTML = "Umfrage nicht gefunden.";
         const poll = snapshot.data();
+        const voteList = poll.votes || [];
+
+        // Bisherige Stimme laden, falls der Name im Browser gespeichert ist
+        const existingVote = voteList.find(v => v.name.toLowerCase() === savedName.toLowerCase());
+        if (existingVote && Object.keys(myChoices).length === 0) {
+          Object.assign(myChoices, existingVote.choices);
+        }
+
         let html = `<h1 class="text-xl font-bold mb-2 text-gray-800">${poll.title}</h1>`;
-        html += `<input id="voterName" placeholder="Dein Name" class="border p-2 w-full mb-4 rounded">`;
+        html += `<input id="voterName" placeholder="Dein Name" value="${savedName}" class="border p-2 w-full mb-4 rounded">`;
         
         poll.dates.forEach((d, idx) => {
+          const choice = myChoices[d];
+          const yesRing = choice === 'ja' ? 'ring-4 ring-blue-600' : '';
+          const maybeRing = choice === 'not' ? 'ring-4 ring-blue-600' : '';
+          const noRing = choice === 'nein' ? 'ring-4 ring-blue-600' : '';
+
           html += `
             <div class="mb-3 p-3 bg-gray-50 border border-gray-200 rounded flex justify-between items-center">
               <span class="font-medium text-sm text-gray-700">${new Date(d).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}</span>
               <div class="space-x-1">
-                <button id="y-${idx}" data-date="${d}" onclick="selectChoice('${d}','ja','y-${idx}')" class="bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold">Ja</button>
-                <button id="m-${idx}" data-date="${d}" onclick="selectChoice('${d}','not','m-${idx}')" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">Zur Not</button>
-                <button id="n-${idx}" data-date="${d}" onclick="selectChoice('${d}','nein','n-${idx}')" class="bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold">Nein</button>
+                <button id="y-${idx}" data-date="${d}" onclick="selectChoice('${d}','ja','y-${idx}')" class="bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold ${yesRing}">Ja</button>
+                <button id="m-${idx}" data-date="${d}" onclick="selectChoice('${d}','not','m-${idx}')" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold ${maybeRing}">Zur Not</button>
+                <button id="n-${idx}" data-date="${d}" onclick="selectChoice('${d}','nein','n-${idx}')" class="bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold ${noRing}">Nein</button>
               </div>
             </div>`;
         });
-        html += `<button onclick="saveVote()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full mt-4 font-bold">Stimme abgeben</button>`;
+        html += `<button onclick="saveVote()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full mt-4 font-bold">Stimme abgeben / ändern</button>`;
         
-        // Live-Auswertung anzeigen
+        // Auswertung
         html += `<h2 class="text-lg font-bold mt-6 mb-2 border-t pt-4 text-gray-800">Bisherige Stimmen</h2>`;
-        const voteList = poll.votes || [];
         if (voteList.length === 0) {
           html += `<p class="text-gray-500 text-sm">Noch keine Stimmen abgegeben.</p>`;
         } else {
