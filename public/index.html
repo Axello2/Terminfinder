@@ -46,10 +46,7 @@
         const dates = Array.from(document.querySelectorAll(".opt")).map(i => i.value).filter(Boolean);
         if (!title || !dates.length) return alert("Bitte Daten angeben!");
         const docRef = await addDoc(collection(db, "polls"), { title, dates, votes: [] });
-        appDiv.innerHTML = `
-          <h2 class="text-xl font-bold text-slate-800 mb-3">Erfolgreich erstellt! 🎉</h2>
-          <input readonly value="${window.location.origin}?id=${docRef.id}" class="border border-slate-200 p-3 w-full bg-slate-50 rounded-xl text-sm outline-none text-slate-700 font-medium">
-        `;
+        appDiv.innerHTML = `<input readonly value="${window.location.origin}?id=${docRef.id}" class="border border-slate-200 p-3 w-full bg-slate-50 rounded-xl text-sm outline-none text-slate-700 font-medium">`;
       };
     } else {
       // Teilnehmer-Ansicht
@@ -85,6 +82,13 @@
         if (!confirm(`Stimme von ${name} wirklich löschen?`)) return;
         const updatedVotes = activePoll.votes.filter(v => v.name !== name);
         await updateDoc(doc(db, "polls", pollId), { votes: updatedVotes });
+      };
+
+      window.updatePollTitle = async () => {
+        const newTitle = document.getElementById("editTitleInput").value.trim();
+        if (!newTitle) return alert("Bitte einen Titel eingeben!");
+        await updateDoc(doc(db, "polls", pollId), { title: newTitle });
+        alert("Titel erfolgreich aktualisiert! 🎉");
       };
 
       window.addNewDate = async () => {
@@ -227,7 +231,7 @@
                         ${voteList.map(v => {
                           const choice = s.userVotes[v.name];
                           let icon = '❌';
-                          let cl = 'text-red-500 bg-red-50/10';
+                          let cl = 'text-red-500 bg-red-50/20';
                           if (choice === 'ja') { icon = '✅'; cl = 'text-green-500 bg-green-50/20 font-bold'; }
                           else if (choice === 'not') { icon = '🟡'; cl = 'text-yellow-500 bg-yellow-50/10'; }
                           else if (choice === undefined) { icon = '❓'; cl = 'text-slate-300 bg-slate-50/50'; }
@@ -240,25 +244,43 @@
             </div>`;
         }
 
+        // Admin-Bereich mit Titel-Ändern-Funktion
         html += `
           <details class="mt-6 border-t border-slate-100 pt-4">
             <summary class="cursor-pointer text-xs font-bold text-slate-500 select-none flex justify-between items-center hover:text-slate-800 transition-all">
-              <span>⚙️ Admin-Bereich (Termine verwalten)</span>
+              <span>⚙️ Admin-Bereich (Termine & Titel verwalten)</span>
               <span class="text-[10px] text-slate-400">▼ Klick zum Ausklappen</span>
             </summary>
-            <div class="mt-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-              <div class="space-y-1 mb-3">
-                ${activePoll.dates.map(d => `
-                  <div class="flex justify-between items-center text-xs text-slate-500">
-                    <span>${new Date(d).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                    <button onclick="deleteDate('${d}')" class="text-red-500 hover:text-red-700 font-semibold text-[10px] transition-all">Löschen 🗑️</button>
-                  </div>
-                `).join('')}
+            <div class="mt-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-4">
+              
+              <!-- Umfrage-Titel ändern -->
+              <div class="pb-3 border-b border-slate-100">
+                <label class="text-[10px] font-bold text-slate-400 block mb-1">Titel der Umfrage ändern:</label>
+                <div class="flex gap-2">
+                  <input id="editTitleInput" value="${activePoll.title}" class="border border-slate-200 p-2 text-xs rounded-xl w-full outline-none focus:border-indigo-500 bg-white">
+                  <button onclick="updatePollTitle()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm">Speichern</button>
+                </div>
               </div>
-              <div class="flex gap-2">
-                <input type="datetime-local" id="newDateInput" class="border border-slate-200 p-2 text-xs rounded-xl w-full outline-none focus:border-indigo-500">
-                <button onclick="addNewDate()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm">+ Hinzufügen</button>
+
+              <!-- Termine löschen -->
+              <div>
+                <label class="text-[10px] font-bold text-slate-400 block mb-1">Bestehende Termine löschen:</label>
+                <div class="space-y-1 mb-3">
+                  ${activePoll.dates.map(d => `
+                    <div class="flex justify-between items-center text-xs text-slate-500">
+                      <span>${new Date(d).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                      <button onclick="deleteDate('${d}')" class="text-red-500 hover:text-red-700 font-semibold text-[10px] transition-all">Löschen 🗑️</button>
+                    </div>
+                  `).join('')}
+                </div>
+                <!-- Neuen Termin hinzufügen -->
+                <label class="text-[10px] font-bold text-slate-400 block mb-1">Neuen Termin hinzufügen:</label>
+                <div class="flex gap-2">
+                  <input type="datetime-local" id="newDateInput" class="border border-slate-200 p-2 text-xs rounded-xl w-full outline-none focus:border-indigo-500 bg-white">
+                  <button onclick="addNewDate()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm">+ Hinzufügen</button>
+                </div>
               </div>
+
             </div>
           </details>`;
 
