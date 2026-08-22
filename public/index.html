@@ -5,14 +5,12 @@
   <title>Terminfindung</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 p-6">
-  <div id="app" class="max-w-xl mx-auto bg-white p-6 rounded shadow-md">
-    <p class="text-gray-500">Lade App...</p>
-  </div>
+<body class="bg-gray-50 p-4">
+  <div id="app" class="max-w-xl mx-auto bg-white p-5 rounded shadow">Lade App...</div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, addDoc, collection, onSnapshot, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, addDoc, collection, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAJz3O1u8Es3UiEU-UPGu_cdS3YkojAWqU",
@@ -32,11 +30,11 @@
     if (!pollId) {
       // Admin-Ansicht
       appDiv.innerHTML = `
-        <h1 class="text-xl font-bold mb-4 font-sans text-gray-800">Neue Terminfindung</h1>
+        <h1 class="text-xl font-bold mb-4">Neue Terminfindung</h1>
         <input id="title" placeholder="Titel der Umfrage" class="border p-2 w-full mb-3 rounded">
         <div id="options" class="space-y-2 mb-3"></div>
         <button id="addOpt" class="bg-gray-200 px-3 py-1 rounded text-sm font-semibold">+ Option</button>
-        <button id="create" class="bg-green-600 text-white px-4 py-2 rounded w-full mt-4 font-bold">Umfrage Erstellen</button>
+        <button id="create" class="bg-green-600 text-white px-4 py-2 rounded w-full mt-4 font-bold">Erstellen</button>
       `;
       const optDiv = document.getElementById("options");
       const addOpt = () => optDiv.insertAdjacentHTML('beforeend', '<input type="datetime-local" class="opt border p-2 w-full rounded">');
@@ -45,17 +43,15 @@
       document.getElementById("create").onclick = async () => {
         const title = document.getElementById("title").value;
         const dates = Array.from(document.querySelectorAll(".opt")).map(i => i.value).filter(Boolean);
-        if (!title || !dates.length) return alert("Bitte Titel und Termine angeben!");
+        if (!title || !dates.length) return alert("Bitte Daten angeben!");
         const docRef = await addDoc(collection(db, "polls"), { title, dates, votes: [] });
-        appDiv.innerHTML = `
-          <p class="mb-2 font-semibold text-green-600">Erfolgreich erstellt!</p>
-          <input readonly value="${window.location.origin}?id=${docRef.id}" class="border p-2 w-full bg-gray-100 rounded text-sm">
-        `;
+        appDiv.innerHTML = `<input readonly value="${window.location.origin}?id=${docRef.id}" class="border p-2 w-full bg-gray-100 rounded text-sm">`;
       };
     } else {
       // Teilnehmer-Ansicht
-      const myChoices = {};
-      const savedName = localStorage.getItem('voter_name_' + pollId) || "";
+      let myChoices = {};
+      let editingName = null;
+      let activePoll = null;
 
       window.selectChoice = (date, choice, btnId) => {
         myChoices[date] = choice;
@@ -63,68 +59,116 @@
         document.getElementById(btnId).classList.add("ring-4", "ring-blue-600");
       };
 
+      window.editVote = (name) => {
+        editingName = name;
+        const vote = activePoll.votes.find(v => v.name === name);
+        if (vote) {
+          myChoices = { ...vote.choices };
+          document.getElementById("voterName").value = name;
+          document.getElementById("voterName").disabled = true;
+          document.getElementById("cancelEdit").classList.remove("hidden");
+          activePoll.dates.forEach((d, idx) => {
+            document.querySelectorAll(`[data-date="${d}"]`).forEach(b => b.classList.remove("ring-4", "ring-blue-600"));
+            const choice = myChoices[d];
+            if (choice === 'ja') document.getElementById(`y-${idx}`).classList.add("ring-4", "ring-blue-600");
+            if (choice === 'not') document.getElementById(`m-${idx}`).classList.add("ring-4", "ring-blue-600");
+            if (choice === 'nein') document.getElementById(`n-${idx}`).classList.add("ring-4", "ring-blue-600");
+          });
+        }
+      };
+
+      window.cancelEditing = () => {
+        editingName = null;
+        myChoices = {};
+        document.getElementById("voterName").value = "";
+        document.getElementById("voterName").disabled = false;
+        document.getElementById("cancelEdit").classList.add("hidden");
+        document.querySelectorAll(`button[data-date]`).forEach(b => b.classList.remove("ring-4", "ring-blue-600"));
+      };
+
       window.saveVote = async () => {
         const name = document.getElementById("voterName").value.trim();
-        if (!name) return alert("Bitte gib deinen Namen ein!");
-        if (Object.keys(myChoices).length === 0) return alert("Bitte wähle Optionen aus!");
-        
-        const pollDoc = await getDoc(doc(db, "polls", pollId));
-        const currentVotes = pollDoc.data().votes || [];
-        // Vorhandene Stimme des Nutzers entfernen (falls vorhanden)
-        const filteredVotes = currentVotes.filter(v => v.name.toLowerCase() !== name.toLowerCase());
-        filteredVotes.push({ name, choices: myChoices });
+        if (!name) return alert("Namen eingeben!");
+        if (Object.keys(myChoices).length === 0) return alert("Optionen wählen!");
 
-        await updateDoc(doc(db, "polls", pollId), { votes: filteredVotes });
-        localStorage.setItem('voter_name_' + pollId, name);
-        alert("Deine Stimme wurde erfolgreich gespeichert!");
+        const voteList = activePoll.votes || [];
+        const nameExists = voteList.some(v => v.name.toLowerCase() === name.toLowerCase());
+
+        if (nameExists && !editingName) {
+          return alert("Dieser Name hat bereits abgestimmt! Klicke in der Tabelle neben deinem Namen auf 'Ändern', um deine Stimme anzupassen.");
+        }
+
+        const updatedVotes = voteList.filter(v => v.name.toLowerCase() !== name.toLowerCase());
+        updatedVotes.push({ name: editingName || name, choices: myChoices });
+
+        await updateDoc(doc(db, "polls", pollId), { votes: updatedVotes });
+        cancelEditing();
+        alert("Erfolgreich gespeichert!");
       };
 
       onSnapshot(doc(db, "polls", pollId), (snapshot) => {
         if (!snapshot.exists()) return appDiv.innerHTML = "Umfrage nicht gefunden.";
-        const poll = snapshot.data();
-        const voteList = poll.votes || [];
+        activePoll = snapshot.data();
+        const voteList = activePoll.votes || [];
 
-        // Bisherige Stimme laden, falls der Name im Browser gespeichert ist
-        const existingVote = voteList.find(v => v.name.toLowerCase() === savedName.toLowerCase());
-        if (existingVote && Object.keys(myChoices).length === 0) {
-          Object.assign(myChoices, existingVote.choices);
-        }
+        let html = `<h1 class="text-xl font-bold mb-2 text-gray-800">${activePoll.title}</h1>`;
+        html += `
+          <div class="mb-4">
+            <input id="voterName" placeholder="Dein Name" class="border p-2 w-full rounded mb-2">
+            <button id="cancelEdit" onclick="cancelEditing()" class="hidden bg-gray-500 text-white px-3 py-1 rounded text-xs">Bearbeiten abbrechen</button>
+          </div>`;
 
-        let html = `<h1 class="text-xl font-bold mb-2 text-gray-800">${poll.title}</h1>`;
-        html += `<input id="voterName" placeholder="Dein Name" value="${savedName}" class="border p-2 w-full mb-4 rounded">`;
-        
-        poll.dates.forEach((d, idx) => {
-          const choice = myChoices[d];
-          const yesRing = choice === 'ja' ? 'ring-4 ring-blue-600' : '';
-          const maybeRing = choice === 'not' ? 'ring-4 ring-blue-600' : '';
-          const noRing = choice === 'nein' ? 'ring-4 ring-blue-600' : '';
-
+        activePoll.dates.forEach((d, idx) => {
           html += `
-            <div class="mb-3 p-3 bg-gray-50 border border-gray-200 rounded flex justify-between items-center">
-              <span class="font-medium text-sm text-gray-700">${new Date(d).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+            <div class="mb-3 p-3 bg-gray-50 border rounded flex justify-between items-center">
+              <span class="font-medium text-xs text-gray-700">${new Date(d).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</span>
               <div class="space-x-1">
-                <button id="y-${idx}" data-date="${d}" onclick="selectChoice('${d}','ja','y-${idx}')" class="bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold ${yesRing}">Ja</button>
-                <button id="m-${idx}" data-date="${d}" onclick="selectChoice('${d}','not','m-${idx}')" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold ${maybeRing}">Zur Not</button>
-                <button id="n-${idx}" data-date="${d}" onclick="selectChoice('${d}','nein','n-${idx}')" class="bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold ${noRing}">Nein</button>
+                <button id="y-${idx}" data-date="${d}" onclick="selectChoice('${d}','ja','y-${idx}')" class="bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold">Ja</button>
+                <button id="m-${idx}" data-date="${d}" onclick="selectChoice('${d}','not','m-${idx}')" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">Zur Not</button>
+                <button id="n-${idx}" data-date="${d}" onclick="selectChoice('${d}','nein','n-${idx}')" class="bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold">Nein</button>
               </div>
             </div>`;
         });
-        html += `<button onclick="saveVote()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full mt-4 font-bold">Stimme abgeben / ändern</button>`;
-        
-        // Auswertung
-        html += `<h2 class="text-lg font-bold mt-6 mb-2 border-t pt-4 text-gray-800">Bisherige Stimmen</h2>`;
+        html += `<button onclick="saveVote()" class="bg-blue-600 text-white px-4 py-2 rounded w-full mt-2 font-bold">Stimme speichern</button>`;
+
+        // Tabellarische Rangliste (meiste Ja-Stimmen absteigend)
+        const dateStats = activePoll.dates.map(d => {
+          let yes = 0, not = 0;
+          voteList.forEach(v => {
+            if (v.choices[d] === 'ja') yes++;
+            if (v.choices[d] === 'not') not++;
+          });
+          return { date: d, yes, not };
+        }).sort((a, b) => b.yes - a.yes || b.not - a.not);
+
+        html += `<h2 class="text-md font-bold mt-6 border-t pt-4 text-gray-800">Beste Termine (Rangliste)</h2><div class="space-y-1 mt-2">`;
+        dateStats.forEach((s, i) => {
+          const dStr = new Date(s.date).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+          html += `<div class="text-xs bg-blue-50 p-2 border border-blue-200 rounded flex justify-between"><strong>${i+1}. ${dStr}</strong> <span>${s.yes}x ✅ Ja | ${s.not}x 🟡 Zur Not</span></div>`;
+        });
+        html += `</div>`;
+
+        // Bisherige Stimmen mit "Ändern"-Button
+        html += `<h2 class="text-md font-bold mt-6 border-t pt-4 text-gray-800">Bisherige Stimmen</h2><div class="mt-2 space-y-2">`;
         if (voteList.length === 0) {
-          html += `<p class="text-gray-500 text-sm">Noch keine Stimmen abgegeben.</p>`;
+          html += `<p class="text-gray-500 text-xs">Noch keine Stimmen abgegeben.</p>`;
         } else {
           voteList.forEach(v => {
-            html += `<div class="text-sm border-b py-2 text-gray-700"><strong>${v.name}</strong>: `;
-            Object.entries(v.choices).forEach(([date, choice]) => {
-              const val = choice === 'ja' ? '✅ Ja' : choice === 'not' ? '🟡 Zur Not' : '❌ Nein';
-              html += `<span class="ml-3 text-xs bg-gray-100 p-1 rounded font-medium">${val}</span>`;
-            });
-            html += `</div>`;
+            html += `
+              <div class="text-xs border-b pb-2 flex justify-between items-start">
+                <div>
+                  <strong>${v.name}</strong>
+                  ${Object.entries(v.choices).map(([date, choice]) => {
+                    const dStr = new Date(date).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+                    const val = choice === 'ja' ? '✅ Ja' : choice === 'not' ? '🟡 Zur Not' : '❌ Nein';
+                    return `<div class="text-[10px] text-gray-500 ml-2">${dStr}: ${val}</div>`;
+                  }).join('')}
+                </div>
+                <button onclick="editVote('${v.name}')" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-2 py-0.5 rounded text-[10px] font-semibold border">✏️ Ändern</button>
+              </div>`;
           });
         }
+        html += `</div>`;
         appDiv.innerHTML = html;
       });
     }
