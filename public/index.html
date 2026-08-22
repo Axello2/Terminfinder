@@ -54,6 +54,18 @@
       let editingName = null;
       let activePoll = null;
 
+      const getCol = (n) => {
+        let h = 0;
+        for (let i = 0; i < n.length; i++) h = n.charCodeAt(i) + ((h << 5) - h);
+        const cls = [
+          'bg-pink-100 text-pink-800', 'bg-purple-100 text-purple-800', 
+          'bg-indigo-100 text-indigo-800', 'bg-blue-100 text-blue-800', 
+          'bg-teal-100 text-teal-800', 'bg-emerald-100 text-emerald-800', 
+          'bg-orange-100 text-orange-800', 'bg-rose-100 text-rose-800'
+        ];
+        return cls[Math.abs(h) % cls.length];
+      };
+
       window.selectChoice = (date, choice, btnId) => {
         myChoices[date] = choice;
         document.querySelectorAll(`[data-date="${date}"]`).forEach(b => b.classList.remove("ring-4", "ring-indigo-500/50"));
@@ -140,10 +152,49 @@
         alert("Erfolgreich gespeichert!");
       };
 
+      window.toggleChatNameInput = () => {
+        const selectEl = document.getElementById("chatUserSelect");
+        const container = document.getElementById("chatNewNameContainer");
+        if (selectEl && container) {
+          if (selectEl.value === "__new" || selectEl.value === "") {
+            container.classList.remove("hidden");
+          } else {
+            container.classList.add("hidden");
+          }
+        }
+      };
+
+      window.sendChatMessage = async () => {
+        const text = document.getElementById("chatTextInput").value.trim();
+        if (!text) return;
+
+        const selectEl = document.getElementById("chatUserSelect");
+        const newNameEl = document.getElementById("chatNewNameInput");
+        let sender = "";
+
+        if (selectEl) {
+          if (selectEl.value === "__new" || selectEl.value === "") {
+            sender = newNameEl ? newNameEl.value.trim() : "";
+          } else {
+            sender = selectEl.value;
+          }
+        } else {
+          sender = newNameEl ? newNameEl.value.trim() : "";
+        }
+
+        if (!sender) return alert("Bitte wähle einen Namen aus oder gib einen neuen Namen ein!");
+
+        const messages = activePoll.messages || [];
+        messages.push({ name: sender, text, timestamp: Date.now() });
+        await updateDoc(doc(db, "polls", pollId), { messages });
+        document.getElementById("chatTextInput").value = "";
+      };
+
       onSnapshot(doc(db, "polls", pollId), (snapshot) => {
         if (!snapshot.exists()) return appDiv.innerHTML = "Nicht gefunden.";
         activePoll = snapshot.data();
         const voteList = activePoll.votes || [];
+        const savedName = localStorage.getItem('voter_name_' + pollId) || "";
 
         const incompleteVoters = [];
         voteList.forEach(v => {
@@ -171,7 +222,7 @@
         html += `
           <div class="mb-4">
             <input id="voterName" placeholder="Dein Name" class="border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all rounded-xl p-3 w-full mb-2 outline-none text-slate-700">
-            <button id="cancelEdit" onclick="cancelEditing()" class="hidden bg-slate-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm">Bearbeiten abbrechen</button>
+            <button id="cancelEdit" onclick="cancelEditing()" class="hidden bg-slate-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm">Abbrechen</button>
           </div>`;
 
         activePoll.dates.forEach((d, idx) => {
@@ -187,6 +238,42 @@
         });
         html += `<button onclick="saveVote()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl w-full mt-2 font-bold shadow-lg shadow-indigo-100 transition-all">Stimme speichern</button>`;
 
+        // --- CHAT MODULE ---
+        const msgList = activePoll.messages || [];
+        html += `<div class="mt-6 border-t border-slate-100 pt-4"><h3 class="text-xs font-bold text-slate-700 mb-2">💬 Chat & Kommentare</h3>`;
+        html += `<div class="max-h-32 overflow-y-auto mb-3 p-2 bg-slate-50 border border-slate-100 rounded-xl space-y-1.5 text-[11px] outline-none">`;
+        if (msgList.length === 0) {
+          html += `<p class="text-gray-400 text-xs">Noch keine Nachrichten vorhanden.</p>`;
+        } else {
+          msgList.sort((a, b) => a.timestamp - b.timestamp).forEach(m => {
+            html += `<div class="py-0.5"><span class="px-1.5 py-0.5 rounded-md font-extrabold ${getCol(m.name)}">${m.name}</span> <span class="text-slate-600 ml-1 font-medium">${m.text}</span></div>`;
+          });
+        }
+        html += `</div>`;
+        
+        // Name selector logic for chat
+        html += `<div class="space-y-1 text-xs">`;
+        if (voteList.length > 0) {
+          html += `
+            <select id="chatUserSelect" onchange="toggleChatNameInput()" class="border border-slate-200 p-2 w-full rounded-xl text-slate-700 bg-white">
+              ${savedName ? `<option value="${savedName}">Schreiben als: ${savedName}</option>` : '<option value="" disabled selected>Wer schreibt?</option>'}
+              ${voteList.filter(v => v.name !== savedName).map(v => `<option value="${v.name}">${v.name}</option>`).join('')}
+              <option value="__new">Neuer Name...</option>
+            </select>
+            <div id="chatNewNameContainer" class="${savedName ? 'hidden' : ''} mt-1">
+              <input id="chatNewNameInput" placeholder="Dein Name für den Chat" class="border border-slate-200 p-2 w-full rounded-xl bg-white">
+            </div>`;
+        } else {
+          html += `<input id="chatNewNameInput" placeholder="Dein Name für den Chat" class="border border-slate-200 p-2 w-full rounded-xl bg-white">`;
+        }
+        html += `
+          <div class="flex gap-1 mt-1">
+            <input id="chatTextInput" placeholder="Nachricht schreiben..." class="border border-slate-200 p-2 w-full rounded-xl bg-white outline-none focus:border-indigo-500">
+            <button onclick="sendChatMessage()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl font-bold transition-all shadow-sm">Senden</button>
+          </div>
+        </div></div>`;
+
+        // Tabellarische Auswertung
         const dateStats = activePoll.dates.map(d => {
           let yes = 0, not = 0;
           const userVotes = {};
@@ -244,7 +331,7 @@
             </div>`;
         }
 
-        // Admin-Bereich mit Titel-Ändern-Funktion
+        // Admin-Bereich
         html += `
           <details class="mt-6 border-t border-slate-100 pt-4">
             <summary class="cursor-pointer text-xs font-bold text-slate-500 select-none flex justify-between items-center hover:text-slate-800 transition-all">
@@ -252,8 +339,6 @@
               <span class="text-[10px] text-slate-400">▼ Klick zum Ausklappen</span>
             </summary>
             <div class="mt-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-4">
-              
-              <!-- Umfrage-Titel ändern -->
               <div class="pb-3 border-b border-slate-100">
                 <label class="text-[10px] font-bold text-slate-400 block mb-1">Titel der Umfrage ändern:</label>
                 <div class="flex gap-2">
@@ -261,8 +346,6 @@
                   <button onclick="updatePollTitle()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm">Speichern</button>
                 </div>
               </div>
-
-              <!-- Termine löschen -->
               <div>
                 <label class="text-[10px] font-bold text-slate-400 block mb-1">Bestehende Termine löschen:</label>
                 <div class="space-y-1 mb-3">
@@ -273,14 +356,12 @@
                     </div>
                   `).join('')}
                 </div>
-                <!-- Neuen Termin hinzufügen -->
                 <label class="text-[10px] font-bold text-slate-400 block mb-1">Neuen Termin hinzufügen:</label>
                 <div class="flex gap-2">
                   <input type="datetime-local" id="newDateInput" class="border border-slate-200 p-2 text-xs rounded-xl w-full outline-none focus:border-indigo-500 bg-white">
                   <button onclick="addNewDate()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm">+ Hinzufügen</button>
                 </div>
               </div>
-
             </div>
           </details>`;
 
