@@ -30,7 +30,7 @@
     if (!pollId) {
       // Admin-Ansicht
       appDiv.innerHTML = `
-        <h1 class="text-xl font-bold mb-4 font-sans text-gray-800">Neue Terminfindung</h1>
+        <h1 class="text-xl font-bold mb-4">Neue Terminfindung</h1>
         <input id="title" placeholder="Titel der Umfrage" class="border p-2 w-full mb-3 rounded">
         <div id="options" class="space-y-2 mb-3"></div>
         <button id="addOpt" class="bg-gray-200 px-3 py-1 rounded text-sm font-semibold">+ Option</button>
@@ -77,6 +77,32 @@
         }
       };
 
+      window.deleteVote = async (name) => {
+        if (!confirm(`Stimme von ${name} wirklich löschen?`)) return;
+        const updatedVotes = activePoll.votes.filter(v => v.name !== name);
+        await updateDoc(doc(db, "polls", pollId), { votes: updatedVotes });
+      };
+
+      window.addNewDate = async () => {
+        const newDate = document.getElementById("newDateInput").value;
+        if (!newDate) return alert("Bitte Datum wählen!");
+        if (activePoll.dates.includes(newDate)) return alert("Termin existiert bereits!");
+        const updatedDates = [...activePoll.dates, newDate];
+        await updateDoc(doc(db, "polls", pollId), { dates: updatedDates });
+        document.getElementById("newDateInput").value = "";
+      };
+
+      window.deleteDate = async (dateToDelete) => {
+        if (!confirm("Diesen Termin wirklich löschen?")) return;
+        const updatedDates = activePoll.dates.filter(d => d !== dateToDelete);
+        const updatedVotes = activePoll.votes.map(v => {
+          const newChoices = { ...v.choices };
+          delete newChoices[dateToDelete];
+          return { name: v.name, choices: newChoices };
+        });
+        await updateDoc(doc(db, "polls", pollId), { dates: updatedDates, votes: updatedVotes });
+      };
+
       window.cancelEditing = () => {
         editingName = null;
         myChoices = {};
@@ -95,7 +121,7 @@
         const nameExists = voteList.some(v => v.name.toLowerCase() === name.toLowerCase());
 
         if (nameExists && !editingName) {
-          return alert("Dieser Name hat bereits abgestimmt! Klicke in der Tabelle unter dem Namen auf '✏️ Ändern', um deine Stimme anzupassen.");
+          return alert("Name existiert bereits!");
         }
 
         const updatedVotes = voteList.filter(v => v.name.toLowerCase() !== name.toLowerCase());
@@ -111,7 +137,31 @@
         activePoll = snapshot.data();
         const voteList = activePoll.votes || [];
 
+        // Prüfen, wer noch auf neu hinzugefügte Termine abstimmen muss
+        const incompleteVoters = [];
+        voteList.forEach(v => {
+          const missingCount = activePoll.dates.filter(d => !v.choices[d]).length;
+          if (missingCount > 0) incompleteVoters.push({ name: v.name, count: missingCount });
+        });
+
         let html = `<h1 class="text-xl font-bold mb-2 text-gray-800">${activePoll.title}</h1>`;
+
+        // Gelbe Warnbox bei unvollständigen Stimmen anzeigen
+        if (incompleteVoters.length > 0) {
+          html += `
+            <div class="bg-yellow-50 border border-yellow-200 p-3 rounded-lg text-xs mb-4 text-yellow-800 shadow-sm">
+              <strong class="font-bold block mb-1">⚠️ Achtung: Neue Termine wurden hinzugefügt!</strong>
+              Die Stimmen folgender Personen sind unvollständig:
+              <ul class="list-disc ml-4 mt-1 space-y-1 font-medium">
+                ${incompleteVoters.map(iv => `
+                  <li>
+                    ${iv.name} (fehlt für ${iv.count} Termin(e)) 
+                    <button onclick="editVote('${iv.name}')" class="text-blue-600 underline ml-1 hover:text-blue-800">Jetzt ausfüllen ✏️</button>
+                  </li>`).join('')}
+              </ul>
+            </div>`;
+        }
+
         html += `
           <div class="mb-4">
             <input id="voterName" placeholder="Dein Name" class="border p-2 w-full rounded mb-2">
@@ -129,14 +179,32 @@
               </div>
             </div>`;
         });
-        html += `<button onclick="saveVote()" class="bg-blue-600 text-white px-4 py-2 rounded w-full mt-2 font-bold">Stimme speichern</button>`;
+        html += `<button onclick="saveVote()" class="bg-blue-600 text-white px-4 py-2 rounded w-full mt-2 font-bold shadow hover:bg-blue-700">Stimme speichern</button>`;
+
+        // Admin-Bereich: Termine verwalten
+        html += `
+          <div class="mt-6 border-t pt-4 bg-gray-50 p-3 rounded-lg border">
+            <h3 class="text-xs font-bold text-gray-700 mb-2">⚙️ Admin: Termine verwalten</h3>
+            <div class="space-y-1 mb-3">
+              ${activePoll.dates.map(d => `
+                <div class="flex justify-between items-center text-xs text-gray-600">
+                  <span>${new Date(d).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                  <button onclick="deleteDate('${d}')" class="text-red-500 hover:text-red-700 font-semibold text-[10px]">Löschen 🗑️</button>
+                </div>
+              `).join('')}
+            </div>
+            <div class="flex gap-1">
+              <input type="datetime-local" id="newDateInput" class="border p-1 text-xs rounded w-full">
+              <button onclick="addNewDate()" class="bg-gray-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-gray-900">+ Hinzufügen</button>
+            </div>
+          </div>`;
 
         // Tabellarische Auswertung & Sortierung nach Punkte-System (A)
         const dateStats = activePoll.dates.map(d => {
           let yes = 0, not = 0;
           const userVotes = {};
           voteList.forEach(v => {
-            const choice = v.choices[d] || 'nein';
+            const choice = v.choices[d]; // Kann undefined sein!
             userVotes[v.name] = choice;
             if (choice === 'ja') yes++;
             if (choice === 'not') not++;
@@ -145,7 +213,7 @@
           return { date: d, yes, not, score, userVotes };
         }).sort((a, b) => b.score - a.score);
 
-        html += `<h2 class="text-md font-bold mt-6 border-t pt-4 text-gray-800">Ergebnisse (nach Punkten sortiert)</h2>`;
+        html += `<h2 class="text-md font-bold mt-6 border-t pt-4 text-gray-800">Ergebnisse (Punkte-Ranking)</h2>`;
 
         if (voteList.length === 0) {
           html += `<p class="text-gray-500 text-xs mt-2">Noch keine Stimmen abgegeben.</p>`;
@@ -159,7 +227,10 @@
                     ${voteList.map(v => `
                       <th class="p-2 text-center text-xs font-bold text-gray-700 border-l relative">
                         <div class="truncate max-w-[85px] mx-auto" title="${v.name}">${v.name}</div>
-                        <button onclick="editVote('${v.name}')" class="mt-1 bg-white hover:bg-gray-50 text-gray-800 px-1 py-0.5 rounded text-[10px] border block mx-auto font-semibold">✏️ Ändern</button>
+                        <div class="flex justify-center gap-1 mt-1">
+                          <button onclick="editVote('${v.name}')" class="bg-white hover:bg-gray-50 text-gray-800 px-1 py-0.5 rounded text-[10px] border font-semibold">✏️</button>
+                          <button onclick="deleteVote('${v.name}')" class="bg-white hover:bg-red-50 text-red-500 px-1 py-0.5 rounded text-[10px] border font-semibold">🗑️</button>
+                        </div>
                       </th>
                     `).join('')}
                   </tr>
@@ -176,6 +247,7 @@
                           let cl = 'text-red-500 bg-red-50/20';
                           if (choice === 'ja') { icon = '✅'; cl = 'text-green-500 bg-green-50/30'; }
                           else if (choice === 'not') { icon = '🟡'; cl = 'text-yellow-500 bg-yellow-50/20'; }
+                          else if (choice === undefined) { icon = '❓'; cl = 'text-gray-400 bg-gray-100 font-normal'; } // Fehlt/Unvollständig!
                           return `<td class="p-2 text-center border-l text-sm ${cl}">${icon}</td>`;
                         }).join('')}
                       </tr>`;
