@@ -95,7 +95,7 @@
         const nameExists = voteList.some(v => v.name.toLowerCase() === name.toLowerCase());
 
         if (nameExists && !editingName) {
-          return alert("Dieser Name hat bereits abgestimmt! Klicke in der Tabelle neben deinem Namen auf 'Ändern', um deine Stimme anzupassen.");
+          return alert("Dieser Name hat bereits abgestimmt! Klicke in der Tabelle unter dem Namen auf '✏️ Ändern', um deine Stimme anzupassen.");
         }
 
         const updatedVotes = voteList.filter(v => v.name.toLowerCase() !== name.toLowerCase());
@@ -107,7 +107,7 @@
       };
 
       onSnapshot(doc(db, "polls", pollId), (snapshot) => {
-        if (!snapshot.exists()) return appDiv.innerHTML = "Umfrage nicht gefunden.";
+        if (!snapshot.exists()) return appDiv.innerHTML = "Nicht gefunden.";
         activePoll = snapshot.data();
         const voteList = activePoll.votes || [];
 
@@ -131,44 +131,58 @@
         });
         html += `<button onclick="saveVote()" class="bg-blue-600 text-white px-4 py-2 rounded w-full mt-2 font-bold">Stimme speichern</button>`;
 
-        // Tabellarische Rangliste (meiste Ja-Stimmen absteigend)
+        // Tabellarische Auswertung & Sortierung (Beste Termine)
         const dateStats = activePoll.dates.map(d => {
           let yes = 0, not = 0;
+          const userVotes = {};
           voteList.forEach(v => {
-            if (v.choices[d] === 'ja') yes++;
-            if (v.choices[d] === 'not') not++;
+            const choice = v.choices[d] || 'nein';
+            userVotes[v.name] = choice;
+            if (choice === 'ja') yes++;
+            if (choice === 'not') not++;
           });
-          return { date: d, yes, not };
+          return { date: d, yes, not, userVotes };
         }).sort((a, b) => b.yes - a.yes || b.not - a.not);
 
-        html += `<h2 class="text-md font-bold mt-6 border-t pt-4 text-gray-800">Beste Termine (Rangliste)</h2><div class="space-y-1 mt-2">`;
-        dateStats.forEach((s, i) => {
-          const dStr = new Date(s.date).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
-          html += `<div class="text-xs bg-blue-50 p-2 border border-blue-200 rounded flex justify-between"><strong>${i+1}. ${dStr}</strong> <span>${s.yes}x ✅ Ja | ${s.not}x 🟡 Zur Not</span></div>`;
-        });
-        html += `</div>`;
+        html += `<h2 class="text-md font-bold mt-6 border-t pt-4 text-gray-800">Ergebnisse (nach bester Übereinstimmung)</h2>`;
 
-        // Bisherige Stimmen mit "Ändern"-Button
-        html += `<h2 class="text-md font-bold mt-6 border-t pt-4 text-gray-800">Bisherige Stimmen</h2><div class="mt-2 space-y-2">`;
         if (voteList.length === 0) {
-          html += `<p class="text-gray-500 text-xs">Noch keine Stimmen abgegeben.</p>`;
+          html += `<p class="text-gray-500 text-xs mt-2">Noch keine Stimmen abgegeben.</p>`;
         } else {
-          voteList.forEach(v => {
-            html += `
-              <div class="text-xs border-b pb-2 flex justify-between items-start">
-                <div>
-                  <strong>${v.name}</strong>
-                  ${Object.entries(v.choices).map(([date, choice]) => {
-                    const dStr = new Date(date).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
-                    const val = choice === 'ja' ? '✅ Ja' : choice === 'not' ? '🟡 Zur Not' : '❌ Nein';
-                    return `<div class="text-[10px] text-gray-500 ml-2">${dStr}: ${val}</div>`;
+          html += `
+            <div class="overflow-x-auto mt-3 border rounded-lg shadow-sm bg-white">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-gray-100 border-b">
+                    <th class="p-2 text-xs font-bold text-gray-700">Termin</th>
+                    ${voteList.map(v => `
+                      <th class="p-2 text-center text-xs font-bold text-gray-700 border-l relative">
+                        <div class="truncate max-w-[85px] mx-auto" title="${v.name}">${v.name}</div>
+                        <button onclick="editVote('${v.name}')" class="mt-1 bg-white hover:bg-gray-50 text-gray-800 px-1 py-0.5 rounded text-[10px] border block mx-auto font-semibold">✏️ Ändern</button>
+                      </th>
+                    `).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${dateStats.map((s, idx) => {
+                    const dStr = new Date(s.date).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
+                    return `
+                      <tr class="border-b hover:bg-gray-50">
+                        <td class="p-2 text-xs font-semibold text-gray-800 ${idx === 0 ? 'bg-green-50 border-l-4 border-green-500' : ''}">${dStr}</td>
+                        ${voteList.map(v => {
+                          const choice = s.userVotes[v.name];
+                          let icon = '❌';
+                          let cl = 'text-red-500 bg-red-50/20';
+                          if (choice === 'ja') { icon = '✅'; cl = 'text-green-500 bg-green-50/30'; }
+                          else if (choice === 'not') { icon = '🟡'; cl = 'text-yellow-500 bg-yellow-50/20'; }
+                          return `<td class="p-2 text-center border-l text-sm ${cl}">${icon}</td>`;
+                        }).join('')}
+                      </tr>`;
                   }).join('')}
-                </div>
-                <button onclick="editVote('${v.name}')" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-2 py-0.5 rounded text-[10px] font-semibold border">✏️ Ändern</button>
-              </div>`;
-          });
+                </tbody>
+              </table>
+            </div>`;
         }
-        html += `</div>`;
         appDiv.innerHTML = html;
       });
     }
