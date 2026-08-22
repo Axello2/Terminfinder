@@ -12,18 +12,16 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, addDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, addDoc, collection, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // TODO: Ersetze diese Config mit deiner echten aus der Firebase Console!
     const firebaseConfig = {
-  apiKey: "AIzaSyAJz3O1u8Es3UiEU-UPGu_cdS3YkojAWqU",
-  authDomain: "terminfindung-f7efb.firebaseapp.com",
-  projectId: "terminfindung-f7efb",
-  storageBucket: "terminfindung-f7efb.firebasestorage.app",
-  messagingSenderId: "440640412286",
-  appId: "1:440640412286:web:3ee77fa650c6ba4f03562f"
-  };
-
+      apiKey: "AIzaSyAJz3O1u8Es3UiEU-UPGu_cdS3YkojAWqU",
+      authDomain: "terminfindung-f7efb.firebaseapp.com",
+      projectId: "terminfindung-f7efb",
+      storageBucket: "terminfindung-f7efb.firebasestorage.app",
+      messagingSenderId: "440640412286",
+      appId: "1:440640412286:web:3ee77fa650c6ba4f03562f"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -34,15 +32,15 @@
     if (!pollId) {
       // Admin-Ansicht: Umfrage erstellen
       appDiv.innerHTML = `
-        <h1 class="text-xl font-bold mb-4">Neue Terminfindung</h1>
+        <h1 class="text-xl font-bold mb-4 font-sans text-gray-800">Neue Terminfindung</h1>
         <input id="title" placeholder="Titel der Umfrage" class="border p-2 w-full mb-3 rounded">
         <div id="options" class="space-y-2 mb-3"></div>
-        <button id="addOpt" class="bg-gray-200 px-3 py-1 rounded text-sm">+ Option</button>
-        <button id="create" class="bg-green-600 text-white px-4 py-2 rounded w-full mt-4">Umfrage Erstellen</button>
+        <button id="addOpt" class="bg-gray-200 px-3 py-1 rounded text-sm font-semibold">+ Option</button>
+        <button id="create" class="bg-green-600 text-white px-4 py-2 rounded w-full mt-4 font-bold">Umfrage Erstellen</button>
       `;
       const optDiv = document.getElementById("options");
       const addOpt = () => optDiv.insertAdjacentHTML('beforeend', '<input type="datetime-local" class="opt border p-2 w-full rounded">');
-      addOpt(); // Start mit einem Feld
+      addOpt();
       document.getElementById("addOpt").onclick = addOpt;
       document.getElementById("create").onclick = async () => {
         const title = document.getElementById("title").value;
@@ -51,31 +49,67 @@
         const docRef = await addDoc(collection(db, "polls"), { title, dates, votes: [] });
         appDiv.innerHTML = `
           <p class="mb-2 font-semibold text-green-600">Erfolgreich erstellt!</p>
-          <p class="mb-2 text-sm">Teile diesen Link mit den Teilnehmern:</p>
+          <p class="mb-2 text-sm text-gray-600">Teile diesen Link mit den Teilnehmern:</p>
           <input readonly value="${window.location.origin}?id=${docRef.id}" class="border p-2 w-full bg-gray-100 rounded text-sm">
         `;
       };
     } else {
       // Teilnehmer-Ansicht: Abstimmen
+      const myChoices = {};
+      
+      window.selectChoice = (date, choice, btnId) => {
+        myChoices[date] = choice;
+        document.querySelectorAll(`[data-date="${date}"]`).forEach(b => b.classList.remove("ring-4", "ring-blue-600"));
+        document.getElementById(btnId).classList.add("ring-4", "ring-blue-600");
+      };
+
+      window.saveVote = async () => {
+        const name = document.getElementById("voterName").value.trim();
+        if (!name) return alert("Bitte gib deinen Namen ein!");
+        if (Object.keys(myChoices).length === 0) return alert("Bitte wähle mindestens eine Option aus!");
+        await updateDoc(doc(db, "polls", pollId), {
+          votes: arrayUnion({ name, choices: myChoices })
+        });
+        alert("Deine Stimme wurde erfolgreich gespeichert!");
+      };
+
       onSnapshot(doc(db, "polls", pollId), (snapshot) => {
         if (!snapshot.exists()) return appDiv.innerHTML = "Umfrage nicht gefunden.";
         const poll = snapshot.data();
-        let html = `<h1 class="text-xl font-bold mb-4">${poll.title}</h1><p class="mb-4 text-sm text-gray-500">Stimme für die Termine ab:</p>`;
-        poll.dates.forEach(d => {
+        let html = `<h1 class="text-xl font-bold mb-2 text-gray-800">${poll.title}</h1>`;
+        html += `<input id="voterName" placeholder="Dein Name" class="border p-2 w-full mb-4 rounded">`;
+        
+        poll.dates.forEach((d, idx) => {
           html += `
-            <div class="mb-3 p-3 bg-gray-100 rounded flex justify-between items-center">
-              <span class="font-medium">${new Date(d).toLocaleString('de-DE')}</span>
+            <div class="mb-3 p-3 bg-gray-50 border border-gray-200 rounded flex justify-between items-center">
+              <span class="font-medium text-sm text-gray-700">${new Date(d).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}</span>
               <div class="space-x-1">
-                <button class="bg-green-500 text-white px-3 py-1 rounded text-xs">Ja</button>
-                <button class="bg-yellow-500 text-white px-3 py-1 rounded text-xs">Zur Not</button>
-                <button class="bg-red-500 text-white px-3 py-1 rounded text-xs">Nein</button>
+                <button id="y-${idx}" data-date="${d}" onclick="selectChoice('${d}','ja','y-${idx}')" class="bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold">Ja</button>
+                <button id="m-${idx}" data-date="${d}" onclick="selectChoice('${d}','not','m-${idx}')" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">Zur Not</button>
+                <button id="n-${idx}" data-date="${d}" onclick="selectChoice('${d}','nein','n-${idx}')" class="bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold">Nein</button>
               </div>
             </div>`;
         });
+        html += `<button onclick="saveVote()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded w-full mt-4 font-bold">Stimme abgeben</button>`;
+        
+        // Live-Auswertung anzeigen
+        html += `<h2 class="text-lg font-bold mt-6 mb-2 border-t pt-4 text-gray-800">Bisherige Stimmen</h2>`;
+        const voteList = poll.votes || [];
+        if (voteList.length === 0) {
+          html += `<p class="text-gray-500 text-sm">Noch keine Stimmen abgegeben.</p>`;
+        } else {
+          voteList.forEach(v => {
+            html += `<div class="text-sm border-b py-2 text-gray-700"><strong>${v.name}</strong>: `;
+            Object.entries(v.choices).forEach(([date, choice]) => {
+              const val = choice === 'ja' ? '✅ Ja' : choice === 'not' ? '🟡 Zur Not' : '❌ Nein';
+              html += `<span class="ml-3 text-xs bg-gray-100 p-1 rounded font-medium">${val}</span>`;
+            });
+            html += `</div>`;
+          });
+        }
         appDiv.innerHTML = html;
       });
     }
   </script>
 </body>
 </html>
- 
