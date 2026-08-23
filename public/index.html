@@ -1,4 +1,4 @@
-<!-- v1.0.3 vom 22.08.2026 21:52 Uhr -->
+<!-- v1.0.4 vom 23.08.2026 04:23 Uhr -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -148,6 +148,11 @@
         await updateDoc(doc(db, "polls", pollId), { votes: updatedVotes });
         cancelEditing();
         alert("Erfolgreich gespeichert!");
+        
+        // Nach Speicherung sanft zum Ergebnisse-Bereich hinabscrollen
+        setTimeout(() => {
+          document.getElementById("resultsHeader")?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
       };
 
       window.toggleChatNameInput = () => {
@@ -256,7 +261,7 @@
               </div>
             </div>`;
         });
-        html += `<button onclick="saveVote()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl w-full mt-2 font-bold shadow-lg shadow-indigo-100 transition-all">Stimme speichern</button>`;
+        html += `<button onclick="saveVote()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl w-full mt-2 font-bold shadow-lg shadow-indigo-100 transition-all">Stimme speichern und Auswertung anzeigen</button>`;
 
         // Chat
         const msgList = activePoll.messages || [];
@@ -306,7 +311,7 @@
           return { date: d, yes, not, score, userVotes };
         }).sort((a, b) => b.score - a.score);
 
-        html += `<h2 class="text-md font-bold mt-6 border-t pt-4 text-slate-800">Ergebnisse</h2>`;
+        html += `<h2 id="resultsHeader" class="text-md font-bold mt-6 border-t pt-4 text-slate-800">Ergebnisse</h2>`;
 
         if (voteList.length === 0) {
           html += `<p class="text-gray-400 text-xs mt-2">Noch keine Stimmen abgegeben.</p>`;
@@ -337,7 +342,7 @@
                       <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition-all">
                         <td class="p-3 text-xs font-semibold text-slate-700 ${idx === 0 ? 'bg-emerald-50/30 border-l-4 border-emerald-500' : ''}">
                           <div>${dateStr}</div>
-                          <div class="text-[10px] text-slate-500 font-normal mt-0.5">${timeStr} Uhr <span class="text-slate-400">(${s.score} Pkt.)</span></div>
+                          <div class="text-[10px] text-slate-500 font-bold mt-0.5">${timeStr} Uhr <span class="text-slate-400 font-normal">(${s.score} Pkt.)</span></div>
                         </td>
                         ${voteList.map(v => {
                           const choice = s.userVotes[v.name];
