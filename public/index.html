@@ -1,4 +1,4 @@
-<!-- v1.0.4 vom 23.08.2026 04:23 Uhr -->
+<!-- v1.0.5 vom 23.08.2026 04:30 Uhr -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -7,7 +7,7 @@
   <title>Terminfindung</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gradient-to-tr from-slate-100 via-indigo-50 to-slate-100 min-h-screen p-4 flex items-center justify-center font-sans">
+<body class="bg-gradient-to-b from-violet-100 to-purple-300 min-h-screen p-4 flex items-center justify-center font-sans">
   <div id="app" class="w-full max-w-xl bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-200/50">Lade App...</div>
 
   <script type="module">
@@ -149,7 +149,6 @@
         cancelEditing();
         alert("Erfolgreich gespeichert!");
         
-        // Nach Speicherung sanft zum Ergebnisse-Bereich hinabscrollen
         setTimeout(() => {
           document.getElementById("resultsHeader")?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 150);
@@ -203,18 +202,6 @@
         document.getElementById("chatTextInput").value = "";
       };
 
-      const getCol = (n) => {
-        let h = 0;
-        for (let i = 0; i < n.length; i++) h = n.charCodeAt(i) + ((h << 5) - h);
-        const cls = [
-          'bg-pink-100 text-pink-800', 'bg-purple-100 text-purple-800', 
-          'bg-indigo-100 text-indigo-800', 'bg-blue-100 text-blue-800', 
-          'bg-teal-100 text-teal-800', 'bg-emerald-100 text-emerald-800', 
-          'bg-orange-100 text-orange-800', 'bg-rose-100 text-rose-800'
-        ];
-        return cls[Math.abs(h) % cls.length];
-      };
-
       onSnapshot(doc(db, "polls", pollId), (snapshot) => {
         if (!snapshot.exists()) return appDiv.innerHTML = "Nicht gefunden.";
         activePoll = snapshot.data();
@@ -263,15 +250,29 @@
         });
         html += `<button onclick="saveVote()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl w-full mt-2 font-bold shadow-lg shadow-indigo-100 transition-all">Stimme speichern und Auswertung anzeigen</button>`;
 
-        // Chat
+        // Chat Modul mit eindeutigen Namensschild-Farben
         const msgList = activePoll.messages || [];
+        const uniqueChatNames = [...new Set(msgList.map(m => m.name))];
+        const cls = [
+          'bg-pink-100 text-pink-800', 'bg-purple-100 text-purple-800', 
+          'bg-indigo-100 text-indigo-800', 'bg-blue-100 text-blue-800', 
+          'bg-teal-100 text-teal-800', 'bg-emerald-100 text-emerald-800', 
+          'bg-orange-100 text-orange-800', 'bg-rose-100 text-rose-800',
+          'bg-fuchsia-100 text-fuchsia-800', 'bg-sky-100 text-sky-800'
+        ];
+        const nameColors = {};
+        uniqueChatNames.forEach((name, i) => {
+          nameColors[name] = cls[i % cls.length];
+        });
+
         html += `<div class="mt-6 border-t border-slate-100 pt-4"><h3 class="text-xs font-bold text-slate-700 mb-2">💬 Chat & Kommentare</h3>`;
         html += `<div class="max-h-32 overflow-y-auto mb-3 p-2 bg-slate-50 border border-slate-100 rounded-xl space-y-1.5 text-[11px] outline-none">`;
         if (msgList.length === 0) {
           html += `<p class="text-gray-400 text-xs">Noch keine Nachrichten vorhanden.</p>`;
         } else {
           msgList.sort((a, b) => a.timestamp - b.timestamp).forEach(m => {
-            html += `<div class="py-0.5"><span class="px-1.5 py-0.5 rounded-md font-extrabold ${getCol(m.name)}">${m.name}</span> <span class="text-slate-600 ml-1 font-medium">${m.text}</span></div>`;
+            const colorClass = nameColors[m.name];
+            html += `<div class="py-0.5"><span class="px-1.5 py-0.5 rounded-md font-extrabold ${colorClass}">${m.name}</span> <span class="text-slate-600 ml-1 font-medium">${m.text}</span></div>`;
           });
         }
         html += `</div>`;
