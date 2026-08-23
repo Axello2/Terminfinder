@@ -1,4 +1,4 @@
-<!-- v1.0.6 vom 23.08.2026 04:39 Uhr -->
+<!-- v1.1.0 WhatsApp-Poll-Design vom 23.08.2026 -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -6,13 +6,374 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terminfindung</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root{
+      --wa-bg:#efeae2;
+      --wa-card:#ffffff;
+      --wa-green:#00a884;
+      --wa-green-dark:#008069;
+      --wa-green-soft:#d9fdd3;
+      --wa-line:#e9edef;
+      --wa-text:#111b21;
+      --wa-muted:#667781;
+      --wa-blue:#53bdeb;
+      --wa-yellow:#f7b731;
+      --wa-red:#ea5455;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      color:var(--wa-text);
+      background:
+        linear-gradient(rgba(239,234,226,.95), rgba(239,234,226,.95)),
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,.5), transparent 28%),
+        radial-gradient(circle at 80% 40%, rgba(255,255,255,.35), transparent 30%);
+    }
+
+    .wa-shell{
+      width:100%;
+      max-width:620px;
+      margin:0 auto;
+    }
+
+    .wa-card{
+      background:var(--wa-card);
+      border-radius:14px;
+      box-shadow:0 1px 1px rgba(11,20,26,.06),0 2px 5px rgba(11,20,26,.08);
+      overflow:hidden;
+    }
+
+    .wa-title{
+      font-size:24px;
+      line-height:1.2;
+      font-weight:700;
+      color:var(--wa-text);
+    }
+
+    .wa-subtle{
+      color:var(--wa-muted);
+    }
+
+    .wa-input{
+      width:100%;
+      border:1px solid var(--wa-line);
+      border-radius:10px;
+      padding:11px 12px;
+      outline:none;
+      background:#fff;
+      color:var(--wa-text);
+      transition:.15s;
+    }
+
+    .wa-input:focus{
+      border-color:var(--wa-green);
+      box-shadow:0 0 0 2px rgba(0,168,132,.12);
+    }
+
+    .wa-primary{
+      width:100%;
+      border:0;
+      background:var(--wa-green);
+      color:#fff;
+      font-weight:700;
+      border-radius:10px;
+      padding:12px 14px;
+      cursor:pointer;
+      transition:.15s;
+    }
+
+    .wa-primary:hover{
+      background:var(--wa-green-dark);
+    }
+
+    .wa-secondary{
+      border:1px solid var(--wa-line);
+      background:#fff;
+      color:var(--wa-green-dark);
+      font-weight:700;
+      border-radius:10px;
+      padding:9px 12px;
+      cursor:pointer;
+    }
+
+    .vote-option{
+      padding:13px 0;
+      border-bottom:1px solid var(--wa-line);
+    }
+
+    .vote-option:last-child{
+      border-bottom:none;
+    }
+
+    .choice-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .choice-date{
+      min-width:0;
+      font-size:14px;
+      font-weight:600;
+    }
+
+    .choice-date small{
+      display:block;
+      color:var(--wa-muted);
+      margin-top:2px;
+      font-weight:400;
+    }
+
+    .choice-buttons{
+      display:flex;
+      gap:6px;
+      flex-shrink:0;
+    }
+
+    .choice-btn{
+      min-width:36px;
+      height:36px;
+      border-radius:50%;
+      border:1px solid var(--wa-line);
+      background:#fff;
+      font-size:15px;
+      cursor:pointer;
+      transition:.15s;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .choice-btn:hover{
+      background:#f7f9fa;
+    }
+
+    .choice-btn.selected-yes{
+      border-color:var(--wa-green);
+      background:#e8f8f4;
+      box-shadow:0 0 0 2px rgba(0,168,132,.15);
+    }
+
+    .choice-btn.selected-maybe{
+      border-color:var(--wa-yellow);
+      background:#fff8e6;
+      box-shadow:0 0 0 2px rgba(247,183,49,.15);
+    }
+
+    .choice-btn.selected-no{
+      border-color:var(--wa-red);
+      background:#fff0f0;
+      box-shadow:0 0 0 2px rgba(234,84,85,.14);
+    }
+
+    .result-option{
+      padding:13px 0 12px;
+      border-bottom:1px solid var(--wa-line);
+    }
+
+    .result-option:last-child{
+      border-bottom:none;
+    }
+
+    .result-head{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+      margin-bottom:8px;
+    }
+
+    .result-date{
+      font-size:14px;
+      font-weight:600;
+    }
+
+    .result-count{
+      color:var(--wa-muted);
+      font-size:13px;
+      white-space:nowrap;
+    }
+
+    .progress-track{
+      height:7px;
+      width:100%;
+      background:#edf1f2;
+      border-radius:99px;
+      overflow:hidden;
+    }
+
+    .progress-fill{
+      height:100%;
+      background:var(--wa-green);
+      border-radius:99px;
+      transition:width .25s ease;
+    }
+
+    .progress-fill.maybe{
+      background:var(--wa-yellow);
+    }
+
+    .progress-fill.no{
+      background:var(--wa-red);
+    }
+
+    .result-detail{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      font-size:11px;
+      color:var(--wa-muted);
+      margin-top:6px;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+
+    .dot{
+      width:7px;
+      height:7px;
+      border-radius:50%;
+      display:inline-block;
+    }
+
+    .dot.yes{
+      background:var(--wa-green);
+    }
+
+    .dot.maybe{
+      background:var(--wa-yellow);
+    }
+
+    .dot.no{
+      background:var(--wa-red);
+    }
+
+    .chat-box{
+      background:#f7f9fa;
+      border:1px solid var(--wa-line);
+      border-radius:10px;
+      padding:10px;
+      max-height:180px;
+      overflow:auto;
+    }
+
+    .chat-line{
+      margin-bottom:7px;
+      font-size:12px;
+      line-height:1.35;
+    }
+
+    .chat-name{
+      font-weight:700;
+      color:var(--wa-green-dark);
+    }
+
+    .admin-box{
+      border:1px solid var(--wa-line);
+      border-radius:10px;
+      background:#fafafa;
+      padding:14px;
+    }
+
+    .admin-section + .admin-section{
+      border-top:1px solid var(--wa-line);
+      margin-top:14px;
+      padding-top:14px;
+    }
+
+    .danger{
+      background:#fff;
+      border:1px solid #f1c7c7;
+      color:#b42318;
+      border-radius:10px;
+      padding:10px 12px;
+      font-weight:700;
+      width:100%;
+      cursor:pointer;
+    }
+
+    .viewer-panel{
+      display:none;
+      border-top:1px solid var(--wa-line);
+      margin-top:12px;
+      padding-top:12px;
+    }
+
+    .viewer-panel.open{
+      display:block;
+    }
+
+    .person-row{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:center;
+      padding:8px 0;
+      border-bottom:1px solid #f1f3f4;
+      font-size:12px;
+    }
+
+    .person-row:last-child{
+      border-bottom:none;
+    }
+
+    @media(max-width:520px){
+      body{
+        padding:10px;
+      }
+
+      .wa-title{
+        font-size:21px;
+      }
+
+      .choice-row{
+        align-items:flex-start;
+      }
+
+      .choice-buttons{
+        gap:4px;
+      }
+
+      .choice-btn{
+        width:34px;
+        height:34px;
+        min-width:34px;
+      }
+    }
+  </style>
 </head>
-<body class="bg-gradient-to-b from-violet-100 to-purple-300 min-h-screen p-4 flex items-center justify-center font-sans">
-  <div id="app" class="w-full max-w-xl bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-slate-200/50">Lade App...</div>
+
+<body class="min-h-screen p-4 font-sans">
+
+  <div class="wa-shell">
+    <div id="app" class="wa-card p-5">
+      Lade App...
+    </div>
+  </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, addDoc, collection, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    import {
+      initializeApp
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
+    import {
+      getFirestore,
+      doc,
+      addDoc,
+      collection,
+      onSnapshot,
+      updateDoc,
+      deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
 
     const firebaseConfig = {
       apiKey: "AIzaSyAJz3O1u8Es3UiEU-UPGu_cdS3YkojAWqU",
@@ -23,413 +384,2975 @@
       appId: "1:440640412286:web:3ee77fa650c6ba4f03562f"
     };
 
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+
     const appDiv = document.getElementById("app");
-    const urlParams = new URLSearchParams(window.location.search);
-    const pollId = urlParams.get("id");
+
+    const urlParams =
+      new URLSearchParams(window.location.search);
+
+    const pollId =
+      urlParams.get("id");
+
+
+    const escapeHtml = (value = "") =>
+      String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+
+    const safeJs = (value = "") =>
+      String(value)
+        .replaceAll("\\", "\\\\")
+        .replaceAll("'", "\\'");
+
+
+    const formatDate = (d) => {
+
+      const dt = new Date(d);
+
+      return {
+
+        date: dt.toLocaleDateString(
+          "de-DE",
+          {
+            weekday: "short",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+          }
+        ),
+
+        time: dt.toLocaleTimeString(
+          "de-DE",
+          {
+            hour: "2-digit",
+            minute: "2-digit"
+          }
+        )
+
+      };
+
+    };
+
+
+    /*
+    ===================================================
+    ADMIN STARTSEITE
+    NEUE UMFRAGE ERSTELLEN
+    ===================================================
+    */
+
 
     if (!pollId) {
-      // Admin-Ansicht
+
       appDiv.innerHTML = `
-        <h1 class="text-[32px] font-black mb-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">Neue Terminfindung</h1>
-        <input id="title" placeholder="Titel der Umfrage" class="border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all rounded-xl p-3 w-full mb-3 outline-none">
-        <div id="options" class="space-y-2 mb-3"></div>
-        <button id="addOpt" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2 rounded-xl text-sm font-bold transition-all">+ Option hinzufügen</button>
-        <button id="create" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl w-full mt-4 font-bold shadow-lg shadow-indigo-100 transition-all">Umfrage Erstellen</button>
+
+        <div class="mb-5">
+
+          <div class="wa-title">
+            Neue Terminfindung
+          </div>
+
+          <div class="wa-subtle text-sm mt-1">
+            Termine anlegen und Link teilen
+          </div>
+
+        </div>
+
+
+        <input
+          id="title"
+          placeholder="Titel der Umfrage"
+          class="wa-input mb-3"
+        >
+
+
+        <div
+          id="options"
+          class="space-y-2 mb-3">
+        </div>
+
+
+        <button
+          id="addOpt"
+          class="wa-secondary text-sm">
+
+          + Option hinzufügen
+
+        </button>
+
+
+        <button
+          id="create"
+          class="wa-primary mt-4">
+
+          Umfrage erstellen
+
+        </button>
+
       `;
-      const optDiv = document.getElementById("options");
-      const addOpt = () => optDiv.insertAdjacentHTML('beforeend', '<input type="datetime-local" class="opt border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all rounded-xl p-3 w-full outline-none">');
-      addOpt();
-      document.getElementById("addOpt").onclick = addOpt;
-      document.getElementById("create").onclick = async () => {
-        const title = document.getElementById("title").value;
-        const dates = Array.from(document.querySelectorAll(".opt")).map(i => i.value).filter(Boolean);
-        if (!title || !dates.length) return alert("Bitte Daten angeben!");
-        const docRef = await addDoc(collection(db, "polls"), { title, dates, votes: [] });
-        appDiv.innerHTML = `<input readonly value="${window.location.origin}?id=${docRef.id}" class="border border-slate-200 p-3 w-full bg-slate-50 rounded-xl text-sm outline-none text-slate-700 font-medium">`;
+
+
+      const optDiv =
+        document.getElementById("options");
+
+
+      const addOpt = () => {
+
+        optDiv.insertAdjacentHTML(
+
+          "beforeend",
+
+          `
+          <input
+            type="datetime-local"
+            class="opt wa-input"
+          >
+          `
+
+        );
+
       };
+
+
+      addOpt();
+
+
+      document.getElementById("addOpt").onclick =
+        addOpt;
+
+
+      document.getElementById("create").onclick =
+        async () => {
+
+
+          const title =
+            document
+              .getElementById("title")
+              .value
+              .trim();
+
+
+          const dates =
+            Array.from(
+              document.querySelectorAll(".opt")
+            )
+            .map(i => i.value)
+            .filter(Boolean);
+
+
+          if (!title || !dates.length) {
+
+            return alert(
+              "Bitte Titel und mindestens einen Termin angeben!"
+            );
+
+          }
+
+
+          const docRef =
+            await addDoc(
+
+              collection(db, "polls"),
+
+              {
+
+                title,
+
+                dates,
+
+                votes: [],
+
+                messages: []
+
+              }
+
+            );
+
+
+          const link =
+            `${window.location.origin}${window.location.pathname}?id=${docRef.id}`;
+
+
+          appDiv.innerHTML = `
+
+            <div class="wa-title mb-2">
+              Umfrage erstellt
+            </div>
+
+            <div class="wa-subtle text-sm mb-4">
+              Diesen Link kannst du verschicken:
+            </div>
+
+            <input
+              readonly
+              value="${escapeHtml(link)}"
+              class="wa-input text-sm"
+            >
+
+            <button
+              onclick="
+                navigator.clipboard.writeText('${safeJs(link)}');
+                this.innerText='Kopiert ✓';
+              "
+              class="wa-primary mt-3">
+
+              Link kopieren
+
+            </button>
+
+          `;
+
+        };
+
+
     } else {
-      // Teilnehmer-Ansicht
+
+
+      /*
+      ===================================================
+      TEILNEHMERANSICHT
+      ===================================================
+      */
+
+
       let myChoices = {};
+
       let editingName = null;
+
       let activePoll = null;
 
-      window.selectChoice = (date, choice, btnId) => {
-        myChoices[date] = choice;
-        document.querySelectorAll(`[data-date="${date}"]`).forEach(b => b.classList.remove("ring-4", "ring-indigo-500/50"));
-        document.getElementById(btnId).classList.add("ring-4", "ring-indigo-500/50");
+      let resultsOpen = false;
+
+
+
+      /*
+      ===================================================
+      AUSWAHL JA / ZUR NOT / NEIN
+      ===================================================
+      */
+
+
+      window.selectChoice =
+        (date, choice, btnId) => {
+
+
+          myChoices[date] =
+            choice;
+
+
+          document
+            .querySelectorAll(
+              `[data-date="${CSS.escape(date)}"]`
+            )
+            .forEach(b => {
+
+              b.classList.remove(
+                "selected-yes",
+                "selected-maybe",
+                "selected-no"
+              );
+
+            });
+
+
+          const btn =
+            document.getElementById(btnId);
+
+
+          if (!btn)
+            return;
+
+
+          if (choice === "ja") {
+
+            btn.classList.add(
+              "selected-yes"
+            );
+
+          }
+
+
+          if (choice === "not") {
+
+            btn.classList.add(
+              "selected-maybe"
+            );
+
+          }
+
+
+          if (choice === "nein") {
+
+            btn.classList.add(
+              "selected-no"
+            );
+
+          }
+
+        };
+
+
+
+      /*
+      ===================================================
+      STIMMEN ANSEHEN
+      ===================================================
+      */
+
+
+      window.toggleResults = () => {
+
+        resultsOpen =
+          !resultsOpen;
+
+
+        const panel =
+          document.getElementById(
+            "voteViewer"
+          );
+
+
+        const button =
+          document.getElementById(
+            "toggleResultsBtn"
+          );
+
+
+        if (!panel || !button)
+          return;
+
+
+        panel.classList.toggle(
+          "open",
+          resultsOpen
+        );
+
+
+        button.textContent =
+          resultsOpen
+            ? "Stimmen ausblenden"
+            : "Stimmen ansehen";
+
       };
 
-      window.editVote = (name) => {
-        editingName = name;
-        const vote = activePoll.votes.find(v => v.name === name);
-        if (vote) {
-          myChoices = { ...vote.choices };
-          const voterInput = document.getElementById("voterName");
-          voterInput.value = name;
-          voterInput.disabled = true;
-          document.getElementById("cancelEdit").classList.remove("hidden");
-          activePoll.dates.forEach((d, idx) => {
-            document.querySelectorAll(`[data-date="${d}"]`).forEach(b => b.classList.remove("ring-4", "ring-indigo-500/50"));
-            const choice = myChoices[d];
-            if (choice === 'ja') document.getElementById(`y-${idx}`).classList.add("ring-4", "ring-indigo-500/50");
-            if (choice === 'not') document.getElementById(`m-${idx}`).classList.add("ring-4", "ring-indigo-500/50");
-            if (choice === 'nein') document.getElementById(`n-${idx}`).classList.add("ring-4", "ring-indigo-500/50");
+
+
+      /*
+      ===================================================
+      STIMME BEARBEITEN
+      ===================================================
+      */
+
+
+      window.editVote =
+        (name) => {
+
+
+          editingName =
+            name;
+
+
+          const vote =
+            (activePoll.votes || [])
+              .find(
+                v => v.name === name
+              );
+
+
+          if (!vote)
+            return;
+
+
+          myChoices =
+            { ...vote.choices };
+
+
+          const voterInput =
+            document.getElementById(
+              "voterName"
+            );
+
+
+          voterInput.value =
+            name;
+
+
+          voterInput.disabled =
+            true;
+
+
+          document
+            .getElementById(
+              "cancelEdit"
+            )
+            ?.classList
+            .remove("hidden");
+
+
+          activePoll
+            .dates
+            .forEach(
+              (d, idx) => {
+
+
+                document
+                  .querySelectorAll(
+                    `[data-date="${CSS.escape(d)}"]`
+                  )
+                  .forEach(
+                    b => b.classList.remove(
+                      "selected-yes",
+                      "selected-maybe",
+                      "selected-no"
+                    )
+                  );
+
+
+                const choice =
+                  myChoices[d];
+
+
+                if (
+                  choice === "ja"
+                ) {
+
+                  document
+                    .getElementById(
+                      `y-${idx}`
+                    )
+                    ?.classList
+                    .add(
+                      "selected-yes"
+                    );
+
+                }
+
+
+                if (
+                  choice === "not"
+                ) {
+
+                  document
+                    .getElementById(
+                      `m-${idx}`
+                    )
+                    ?.classList
+                    .add(
+                      "selected-maybe"
+                    );
+
+                }
+
+
+                if (
+                  choice === "nein"
+                ) {
+
+                  document
+                    .getElementById(
+                      `n-${idx}`
+                    )
+                    ?.classList
+                    .add(
+                      "selected-no"
+                    );
+
+                }
+
+              }
+            );
+
+
+          voterInput.scrollIntoView(
+            {
+              behavior: "smooth",
+              block: "center"
+            }
+          );
+
+        };
+
+
+
+      /*
+      ===================================================
+      STIMME LÖSCHEN
+      ===================================================
+      */
+
+
+      window.deleteVote =
+        async (name) => {
+
+
+          if (
+            !confirm(
+              `Stimme von ${name} wirklich löschen?`
+            )
+          )
+            return;
+
+
+          const updatedVotes =
+            (activePoll.votes || [])
+              .filter(
+                v => v.name !== name
+              );
+
+
+          await updateDoc(
+
+            doc(
+              db,
+              "polls",
+              pollId
+            ),
+
+            {
+              votes: updatedVotes
+            }
+
+          );
+
+        };
+
+
+
+      /*
+      ===================================================
+      BEARBEITUNG ABBRECHEN
+      ===================================================
+      */
+
+
+      window.cancelEditing =
+        () => {
+
+
+          editingName =
+            null;
+
+
+          myChoices =
+            {};
+
+
+          const input =
+            document.getElementById(
+              "voterName"
+            );
+
+
+          if (input) {
+
+            input.value =
+              "";
+
+            input.disabled =
+              false;
+
+          }
+
+
+          document
+            .getElementById(
+              "cancelEdit"
+            )
+            ?.classList
+            .add("hidden");
+
+
+          document
+            .querySelectorAll(
+              "button[data-date]"
+            )
+            .forEach(
+              b => b.classList.remove(
+                "selected-yes",
+                "selected-maybe",
+                "selected-no"
+              )
+            );
+
+        };
+
+
+
+      /*
+      ===================================================
+      STIMME SPEICHERN
+      ===================================================
+      */
+
+
+      window.saveVote =
+        async () => {
+
+
+          const name =
+            document
+              .getElementById(
+                "voterName"
+              )
+              .value
+              .trim();
+
+
+          if (!name) {
+
+            return alert(
+              "Namen eingeben!"
+            );
+
+          }
+
+
+          if (
+            Object.keys(
+              myChoices
+            ).length === 0
+          ) {
+
+            return alert(
+              "Optionen wählen!"
+            );
+
+          }
+
+
+          const voteList =
+            activePoll.votes || [];
+
+
+          const nameExists =
+            voteList.some(
+
+              v =>
+                v.name
+                  .toLowerCase()
+                ===
+                name
+                  .toLowerCase()
+
+            );
+
+
+          if (
+            nameExists &&
+            !editingName
+          ) {
+
+            return alert(
+              "Name existiert bereits!"
+            );
+
+          }
+
+
+          const updatedVotes =
+            voteList.filter(
+
+              v =>
+                v.name
+                  .toLowerCase()
+                !==
+                name
+                  .toLowerCase()
+
+            );
+
+
+          updatedVotes.push({
+
+            name:
+              editingName || name,
+
+            choices:
+              { ...myChoices }
+
           });
-          voterInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      };
 
-      window.deleteVote = async (name) => {
-        if (!confirm(`Stimme von ${name} wirklich löschen?`)) return;
-        const updatedVotes = activePoll.votes.filter(v => v.name !== name);
-        await updateDoc(doc(db, "polls", pollId), { votes: updatedVotes });
-      };
 
-      window.updatePollTitle = async () => {
-        const newTitle = document.getElementById("editTitleInput").value.trim();
-        if (!newTitle) return alert("Bitte einen Titel eingeben!");
-        await updateDoc(doc(db, "polls", pollId), { title: newTitle });
-        alert("Titel erfolgreich aktualisiert! 🎉");
-      };
+          localStorage.setItem(
 
-      window.addNewDate = async () => {
-        const newDate = document.getElementById("newDateInput").value;
-        if (!newDate) return alert("Bitte Datum wählen!");
-        if (activePoll.dates.includes(newDate)) return alert("Termin existiert bereits!");
-        const updatedDates = [...activePoll.dates, newDate];
-        await updateDoc(doc(db, "polls", pollId), { dates: updatedDates });
-        document.getElementById("newDateInput").value = "";
-      };
+            "voter_name_" + pollId,
 
-      window.deleteDate = async (dateToDelete) => {
-        if (!confirm("Diesen Termin wirklich löschen?")) return;
-        const updatedDates = activePoll.dates.filter(d => d !== dateToDelete);
-        const updatedVotes = activePoll.votes.map(v => {
-          const newChoices = { ...v.choices };
-          delete newChoices[dateToDelete];
-          return { name: v.name, choices: newChoices };
-        });
-        await updateDoc(doc(db, "polls", pollId), { dates: updatedDates, votes: updatedVotes });
-      };
+            editingName || name
 
-      window.deleteEntirePoll = async () => {
-        if (!confirm("Möchtest du diese gesamte Umfrage inklusive aller Stimmen, Termine und Chat-Nachrichten unwiderruflich löschen?")) return;
-        await deleteDoc(doc(db, "polls", pollId));
-        alert("Umfrage erfolgreich gelöscht!");
-        window.location.href = window.location.origin;
-      };
+          );
 
-      window.cancelEditing = () => {
-        editingName = null;
-        myChoices = {};
-        document.getElementById("voterName").value = "";
-        document.getElementById("voterName").disabled = false;
-        document.getElementById("cancelEdit").classList.add("hidden");
-        document.querySelectorAll(`button[data-date]`).forEach(b => b.classList.remove("ring-4", "ring-indigo-500/50"));
-      };
 
-      window.saveVote = async () => {
-        const name = document.getElementById("voterName").value.trim();
-        if (!name) return alert("Namen eingeben!");
-        if (Object.keys(myChoices).length === 0) return alert("Optionen wählen!");
+          await updateDoc(
 
-        const voteList = activePoll.votes || [];
-        const nameExists = voteList.some(v => v.name.toLowerCase() === name.toLowerCase());
+            doc(
+              db,
+              "polls",
+              pollId
+            ),
 
-        if (nameExists && !editingName) {
-          return alert("Name existiert bereits!");
-        }
+            {
+              votes:
+                updatedVotes
+            }
 
-        const updatedVotes = voteList.filter(v => v.name.toLowerCase() !== name.toLowerCase());
-        updatedVotes.push({ name: editingName || name, choices: myChoices });
+          );
 
-        await updateDoc(doc(db, "polls", pollId), { votes: updatedVotes });
-        cancelEditing();
-        alert("Erfolgreich gespeichert!");
-        
-        setTimeout(() => {
-          document.getElementById("resultsHeader")?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 150);
-      };
 
-      window.toggleChatNameInput = () => {
-        const selectEl = document.getElementById("chatUserSelect");
-        const container = document.getElementById("chatNewNameContainer");
-        if (selectEl && container) {
-          if (selectEl.value === "__new") {
-            container.classList.remove("hidden");
-          } else {
-            container.classList.add("hidden");
+          cancelEditing();
+
+
+          resultsOpen =
+            true;
+
+
+          setTimeout(
+            () => {
+
+
+              const panel =
+                document.getElementById(
+                  "voteViewer"
+                );
+
+
+              const button =
+                document.getElementById(
+                  "toggleResultsBtn"
+                );
+
+
+              panel
+                ?.classList
+                .add("open");
+
+
+              if (button) {
+
+                button.textContent =
+                  "Stimmen ausblenden";
+
+              }
+
+
+              document
+                .getElementById(
+                  "resultsHeader"
+                )
+                ?.scrollIntoView({
+
+                  behavior:
+                    "smooth",
+
+                  block:
+                    "start"
+
+                });
+
+
+            },
+
+            150
+
+          );
+
+        };
+
+
+
+      /*
+      ===================================================
+      TITEL ÄNDERN
+      ===================================================
+      */
+
+
+      window.updatePollTitle =
+        async () => {
+
+
+          const newTitle =
+            document
+              .getElementById(
+                "editTitleInput"
+              )
+              .value
+              .trim();
+
+
+          if (!newTitle) {
+
+            return alert(
+              "Bitte einen Titel eingeben!"
+            );
+
           }
-        }
-      };
 
-      window.checkAdminPassword = (e) => {
-        const details = e.currentTarget.parentElement;
-        if (details.open) return;
-        const pw = prompt("Bitte Admin-Passwort eingeben:");
-        if (pw !== "Admin") {
-          alert("Falsches Passwort!");
-          e.preventDefault();
-        }
-      };
 
-      window.sendChatMessage = async () => {
-        const text = document.getElementById("chatTextInput").value.trim();
-        if (!text) return;
+          await updateDoc(
 
-        const selectEl = document.getElementById("chatUserSelect");
-        const newNameEl = document.getElementById("chatNewNameInput");
-        let sender = "";
+            doc(
+              db,
+              "polls",
+              pollId
+            ),
 
-        if (selectEl) {
-          if (selectEl.value === "__new") {
-            sender = newNameEl ? newNameEl.value.trim() : "";
-          } else {
-            sender = selectEl.value;
+            {
+              title:
+                newTitle
+            }
+
+          );
+
+        };
+
+
+
+      /*
+      ===================================================
+      TERMIN HINZUFÜGEN
+      ===================================================
+      */
+
+
+      window.addNewDate =
+        async () => {
+
+
+          const newDate =
+            document
+              .getElementById(
+                "newDateInput"
+              )
+              .value;
+
+
+          if (!newDate) {
+
+            return alert(
+              "Bitte Datum wählen!"
+            );
+
           }
-        } else {
-          sender = newNameEl ? newNameEl.value.trim() : "";
-        }
 
-        if (!sender) return alert("Bitte wähle deinen Namen aus oder gib einen neuen Namen ein!");
 
-        const messages = activePoll.messages || [];
-        messages.push({ name: sender, text, timestamp: Date.now() });
-        await updateDoc(doc(db, "polls", pollId), { messages });
-        document.getElementById("chatTextInput").value = "";
-      };
+          if (
+            activePoll
+              .dates
+              .includes(
+                newDate
+              )
+          ) {
 
-      const getCol = (n) => {
-        let h = 0;
-        for (let i = 0; i < n.length; i++) h = n.charCodeAt(i) + ((h << 5) - h);
-        const cls = [
-          'bg-pink-100 text-pink-800', 'bg-purple-100 text-purple-800', 
-          'bg-indigo-100 text-indigo-800', 'bg-blue-100 text-blue-800', 
-          'bg-teal-100 text-teal-800', 'bg-emerald-100 text-emerald-800', 
-          'bg-orange-100 text-orange-800', 'bg-rose-100 text-rose-800'
-        ];
-        return cls[Math.abs(h) % cls.length];
-      };
+            return alert(
+              "Termin existiert bereits!"
+            );
 
-      onSnapshot(doc(db, "polls", pollId), (snapshot) => {
-        if (!snapshot.exists()) return appDiv.innerHTML = "Nicht gefunden.";
-        activePoll = snapshot.data();
-        const voteList = activePoll.votes || [];
-        const savedName = localStorage.getItem('voter_name_' + pollId) || "";
+          }
 
-        const incompleteVoters = [];
-        voteList.forEach(v => {
-          const missingCount = activePoll.dates.filter(d => !v.choices[d]).length;
-          if (missingCount > 0) incompleteVoters.push({ name: v.name, count: missingCount });
-        });
 
-        let html = `<h1 class="text-[32px] font-black mb-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-none">${activePoll.title}</h1>`;
+          await updateDoc(
 
-        if (incompleteVoters.length > 0) {
-          html += `
-            <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-3 rounded-xl text-xs mb-4 text-amber-800 shadow-sm">
-              <strong class="font-bold block mb-1">⚠️ Neue Termine hinzugefügt!</strong>
-              Folgende Personen müssen ihre Stimme noch vervollständigen:
-              <ul class="list-disc ml-4 mt-1 space-y-1 font-medium">
-                ${incompleteVoters.map(iv => `
-                  <li>
-                    ${iv.name} 
-                    <button onclick="editVote('${iv.name}')" class="text-indigo-600 underline ml-1 hover:text-indigo-800 font-bold">Ausfüllen ✏️</button>
-                  </li>`).join('')}
-              </ul>
-            </div>`;
-        }
+            doc(
+              db,
+              "polls",
+              pollId
+            ),
 
-        html += `
-          <div class="mb-4">
-            <input id="voterName" placeholder="Dein Name" class="border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all rounded-xl p-3 w-full mb-2 outline-none text-slate-700">
-            <button id="cancelEdit" onclick="cancelEditing()" class="hidden bg-slate-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm">Abbrechen</button>
-          </div>`;
+            {
 
-        activePoll.dates.forEach((d, idx) => {
-          html += `
-            <div class="mb-3 p-3 bg-white border border-slate-100 rounded-xl flex justify-between items-center shadow-sm hover:border-indigo-100 transition-all">
-              <span class="font-bold text-xs text-slate-700">${new Date(d).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</span>
-              <div class="space-x-1">
-                <button id="y-${idx}" data-date="${d}" onclick="selectChoice('${d}','ja','y-${idx}')" class="bg-gradient-to-r from-emerald-400 to-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm">Ja</button>
-                <button id="m-${idx}" data-date="${d}" onclick="selectChoice('${d}','not','m-${idx}')" class="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm">Zur Not</button>
-                <button id="n-${idx}" data-date="${d}" onclick="selectChoice('${d}','nein','n-${idx}')" class="bg-gradient-to-r from-rose-400 to-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm">Nein</button>
+              dates:
+                [
+                  ...activePoll.dates,
+                  newDate
+                ]
+
+            }
+
+          );
+
+        };
+
+
+
+      /*
+      ===================================================
+      TERMIN LÖSCHEN
+      ===================================================
+      */
+
+
+      window.deleteDate =
+        async (dateToDelete) => {
+
+
+          if (
+            !confirm(
+              "Diesen Termin wirklich löschen?"
+            )
+          )
+            return;
+
+
+          const updatedDates =
+            activePoll
+              .dates
+              .filter(
+                d => d !== dateToDelete
+              );
+
+
+          const updatedVotes =
+            (activePoll.votes || [])
+              .map(
+                v => {
+
+
+                  const newChoices =
+                    {
+                      ...v.choices
+                    };
+
+
+                  delete newChoices[
+                    dateToDelete
+                  ];
+
+
+                  return {
+
+                    name:
+                      v.name,
+
+                    choices:
+                      newChoices
+
+                  };
+
+                }
+              );
+
+
+          await updateDoc(
+
+            doc(
+              db,
+              "polls",
+              pollId
+            ),
+
+            {
+
+              dates:
+                updatedDates,
+
+              votes:
+                updatedVotes
+
+            }
+
+          );
+
+        };
+
+
+
+      /*
+      ===================================================
+      GESAMTE UMFRAGE LÖSCHEN
+      ===================================================
+      */
+
+
+      window.deleteEntirePoll =
+        async () => {
+
+
+          if (
+            !confirm(
+              "Gesamte Umfrage inklusive Stimmen, Terminen und Chat-Nachrichten unwiderruflich löschen?"
+            )
+          )
+            return;
+
+
+          await deleteDoc(
+
+            doc(
+              db,
+              "polls",
+              pollId
+            )
+
+          );
+
+
+          window.location.href =
+            window.location.origin +
+            window.location.pathname;
+
+        };
+
+
+
+      /*
+      ===================================================
+      CHAT NAME
+      ===================================================
+      */
+
+
+      window.toggleChatNameInput =
+        () => {
+
+
+          const selectEl =
+            document.getElementById(
+              "chatUserSelect"
+            );
+
+
+          const container =
+            document.getElementById(
+              "chatNewNameContainer"
+            );
+
+
+          if (
+            !selectEl ||
+            !container
+          )
+            return;
+
+
+          container.classList.toggle(
+
+            "hidden",
+
+            selectEl.value !== "__new"
+
+          );
+
+        };
+
+
+
+      /*
+      ===================================================
+      ADMIN PASSWORT
+      ===================================================
+      */
+
+
+      window.checkAdminPassword =
+        (e) => {
+
+
+          const details =
+            e.currentTarget
+              .parentElement;
+
+
+          if (
+            details.open
+          )
+            return;
+
+
+          const pw =
+            prompt(
+              "Bitte Admin-Passwort eingeben:"
+            );
+
+
+          if (
+            pw !== "Admin"
+          ) {
+
+            alert(
+              "Falsches Passwort!"
+            );
+
+            e.preventDefault();
+
+          }
+
+        };
+
+
+
+      /*
+      ===================================================
+      CHAT SENDEN
+      ===================================================
+      */
+
+
+      window.sendChatMessage =
+        async () => {
+
+
+          const textEl =
+            document.getElementById(
+              "chatTextInput"
+            );
+
+
+          const text =
+            textEl
+              .value
+              .trim();
+
+
+          if (!text)
+            return;
+
+
+          const selectEl =
+            document.getElementById(
+              "chatUserSelect"
+            );
+
+
+          const newNameEl =
+            document.getElementById(
+              "chatNewNameInput"
+            );
+
+
+          let sender =
+            "";
+
+
+          if (selectEl) {
+
+            sender =
+              selectEl.value === "__new"
+
+              ?
+
+              (
+                newNameEl
+                  ?.value
+                  .trim()
+                ||
+                ""
+              )
+
+              :
+
+              selectEl.value;
+
+          } else {
+
+            sender =
+              newNameEl
+                ?.value
+                .trim()
+              ||
+              "";
+
+          }
+
+
+          if (!sender) {
+
+            return alert(
+              "Bitte Namen auswählen oder eingeben!"
+            );
+
+          }
+
+
+          const messages =
+            [
+              ...(activePoll.messages || [])
+            ];
+
+
+          messages.push({
+
+            name:
+              sender,
+
+            text,
+
+            timestamp:
+              Date.now()
+
+          });
+
+
+          await updateDoc(
+
+            doc(
+              db,
+              "polls",
+              pollId
+            ),
+
+            {
+              messages
+            }
+
+          );
+
+
+          textEl.value =
+            "";
+
+        };
+
+
+
+      /*
+      ===================================================
+      FIRESTORE LIVE UPDATE
+      ===================================================
+      */
+
+
+      onSnapshot(
+
+        doc(
+          db,
+          "polls",
+          pollId
+        ),
+
+        (snapshot) => {
+
+
+          if (
+            !snapshot.exists()
+          ) {
+
+            appDiv.innerHTML = `
+
+              <div class="wa-title">
+                Umfrage nicht gefunden
               </div>
-            </div>`;
-        });
-        html += `<button onclick="saveVote()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl w-full mt-2 font-bold shadow-lg shadow-indigo-100 transition-all">Stimme speichern und Auswertung anzeigen</button>`;
 
-        // Chat
-        const msgList = activePoll.messages || [];
-        const uniqueChatNames = [...new Set(msgList.map(m => m.name))];
-        const cls = [
-          'bg-pink-100 text-pink-800', 'bg-purple-100 text-purple-800', 
-          'bg-indigo-100 text-indigo-800', 'bg-blue-100 text-blue-800', 
-          'bg-teal-100 text-teal-800', 'bg-emerald-100 text-emerald-800', 
-          'bg-orange-100 text-orange-800', 'bg-rose-100 text-rose-800',
-          'bg-fuchsia-100 text-fuchsia-800', 'bg-sky-100 text-sky-800'
-        ];
-        const nameColors = {};
-        uniqueChatNames.forEach((name, i) => {
-          nameColors[name] = cls[i % cls.length];
-        });
+            `;
 
-        html += `<div class="mt-6 border-t border-slate-100 pt-4"><h3 class="text-xs font-bold text-slate-700 mb-2">💬 Chat & Kommentare</h3>`;
-        html += `<div class="max-h-32 overflow-y-auto mb-3 p-2 bg-slate-50 border border-slate-100 rounded-xl space-y-1.5 text-[11px] outline-none">`;
-        if (msgList.length === 0) {
-          html += `<p class="text-gray-400 text-xs">Noch keine Nachrichten vorhanden.</p>`;
-        } else {
-          msgList.sort((a, b) => a.timestamp - b.timestamp).forEach(m => {
-            const colorClass = nameColors[m.name];
-            html += `<div class="py-0.5"><span class="px-1.5 py-0.5 rounded-md font-extrabold ${colorClass}">${m.name}</span> <span class="text-slate-600 ml-1 font-medium">${m.text}</span></div>`;
-          });
-        }
-        html += `</div>`;
-        
-        html += `<div class="space-y-1 text-xs">`;
-        if (voteList.length > 0) {
-          html += `
-            <select id="chatUserSelect" onchange="toggleChatNameInput()" class="border border-slate-200 p-2 w-full rounded-xl text-slate-700 bg-white">
-              <option value="" disabled selected>Wer schreibt?</option>
-              ${voteList.map(v => `<option value="${v.name}">${v.name}</option>`).join('')}
-              <option value="__new">Neuer Name...</option>
-            </select>
-            <div id="chatNewNameContainer" class="hidden mt-1">
-              <input id="chatNewNameInput" placeholder="Dein Name für den Chat" class="border border-slate-200 p-2 w-full rounded-xl bg-white">
-            </div>`;
-        } else {
-          html += `<input id="chatNewNameInput" placeholder="Dein Name für den Chat" class="border border-slate-200 p-2 w-full rounded-xl bg-white">`;
-        }
-        html += `
-          <div class="flex gap-1 mt-1">
-            <input id="chatTextInput" placeholder="Nachricht schreiben..." class="border border-slate-200 p-2 w-full rounded-xl bg-white outline-none focus:border-indigo-500">
-            <button onclick="sendChatMessage()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl font-bold transition-all shadow-sm">Senden</button>
-          </div>
-        </div></div>`;
+            return;
 
-        // Tabellarische Auswertung (A)
-        const dateStats = activePoll.dates.map(d => {
-          let yes = 0, not = 0;
-          const userVotes = {};
-          voteList.forEach(v => {
-            const choice = v.choices[d];
-            userVotes[v.name] = choice;
-            if (choice === 'ja') yes++;
-            if (choice === 'not') not++;
-          });
-          const score = (yes * 2) + (not * 1);
-          return { date: d, yes, not, score, userVotes };
-        }).sort((a, b) => b.score - a.score);
+          }
 
-        const maxScore = dateStats[0]?.score || 0;
-        const minScore = dateStats[dateStats.length - 1]?.score || 0;
 
-        html += `<h2 id="resultsHeader" class="text-md font-bold mt-6 border-t pt-4 text-slate-800">Ergebnisse</h2>`;
+          activePoll =
+            snapshot.data();
 
-        if (voteList.length === 0) {
-          html += `<p class="text-gray-400 text-xs mt-2">Noch keine Stimmen abgegeben.</p>`;
-        } else {
-          html += `
-            <div class="overflow-x-auto mt-3 border border-slate-100 rounded-xl shadow-sm bg-white">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="bg-slate-50 border-b border-slate-100">
-                    <th class="p-3 text-xs font-bold text-slate-700">Termin</th>
-                    ${voteList.map(v => `
-                      <th class="p-3 text-center text-xs font-bold text-slate-700 border-l border-slate-100 relative">
-                        <div class="truncate max-w-[85px] mx-auto text-slate-700 font-black" title="${v.name}">${v.name}</div>
-                        <div class="flex justify-center gap-1 mt-1.5">
-                          <button onclick="editVote('${v.name}')" class="bg-white hover:bg-slate-50 text-slate-800 px-1.5 py-0.5 rounded-md text-[10px] border border-slate-200 font-bold transition-all shadow-sm">✏️</button>
-                          <button onclick="deleteVote('${v.name}')" class="bg-white hover:bg-red-50 text-red-500 px-1.5 py-0.5 rounded-md text-[10px] border border-slate-200 font-bold transition-all shadow-sm">🗑️</button>
+
+          const voteList =
+            activePoll.votes || [];
+
+
+          const msgList =
+            [
+              ...(activePoll.messages || [])
+            ];
+
+
+          /*
+          ===============================================
+          UNVOLLSTÄNDIGE TEILNEHMER
+          ===============================================
+          */
+
+
+          const incompleteVoters =
+            [];
+
+
+          voteList.forEach(
+            v => {
+
+
+              const missingCount =
+                activePoll
+                  .dates
+                  .filter(
+                    d =>
+                      !v.choices?.[d]
+                  )
+                  .length;
+
+
+              if (
+                missingCount > 0
+              ) {
+
+                incompleteVoters.push({
+
+                  name:
+                    v.name,
+
+                  count:
+                    missingCount
+
+                });
+
+              }
+
+            }
+          );
+
+
+
+          /*
+          ===============================================
+          STATISTIK
+          ===============================================
+          */
+
+
+          const dateStats =
+            activePoll
+              .dates
+              .map(
+                d => {
+
+
+                  let yes =
+                    0;
+
+                  let maybe =
+                    0;
+
+                  let no =
+                    0;
+
+                  let answered =
+                    0;
+
+
+                  const userVotes =
+                    {};
+
+
+                  voteList.forEach(
+                    v => {
+
+
+                      const choice =
+                        v.choices?.[d];
+
+
+                      userVotes[
+                        v.name
+                      ] =
+                        choice;
+
+
+                      if (choice)
+                        answered++;
+
+
+                      if (
+                        choice === "ja"
+                      )
+                        yes++;
+
+
+                      if (
+                        choice === "not"
+                      )
+                        maybe++;
+
+
+                      if (
+                        choice === "nein"
+                      )
+                        no++;
+
+                    }
+                  );
+
+
+                  const score =
+                    yes * 2 +
+                    maybe;
+
+
+                  return {
+
+                    date:
+                      d,
+
+                    yes,
+
+                    maybe,
+
+                    no,
+
+                    answered,
+
+                    score,
+
+                    userVotes
+
+                  };
+
+                }
+              )
+              .sort(
+                (a, b) => {
+
+
+                  if (
+                    b.score !== a.score
+                  )
+                    return b.score - a.score;
+
+
+                  if (
+                    b.yes !== a.yes
+                  )
+                    return b.yes - a.yes;
+
+
+                  return (
+                    new Date(a.date)
+                    -
+                    new Date(b.date)
+                  );
+
+                }
+              );
+
+
+
+          /*
+          ===============================================
+          HTML AUFBAU
+          ===============================================
+          */
+
+
+          let html = `
+
+            <div class="mb-5">
+
+              <div class="wa-title">
+
+                ${escapeHtml(
+                  activePoll.title
+                )}
+
+              </div>
+
+              <div class="wa-subtle text-sm mt-1">
+
+                Wähle für jeden Termin Ja, Zur Not oder Nein.
+
+              </div>
+
+            </div>
+
+          `;
+
+
+
+          /*
+          ===============================================
+          WARNUNG NEUE TERMINE
+          ===============================================
+          */
+
+
+          if (
+            incompleteVoters.length > 0
+          ) {
+
+            html += `
+
+              <div
+                class="
+                  mb-4
+                  rounded-xl
+                  border
+                  border-amber-200
+                  bg-amber-50
+                  p-3
+                  text-xs
+                  text-amber-900
+                "
+              >
+
+                <div class="font-bold mb-1">
+
+                  Neue Termine wurden hinzugefügt
+
+                </div>
+
+
+                ${
+
+                  incompleteVoters
+                    .map(
+                      iv => `
+
+                        <div
+                          class="
+                            flex
+                            items-center
+                            justify-between
+                            gap-3
+                            py-1
+                          "
+                        >
+
+                          <span>
+
+                            ${escapeHtml(iv.name)}
+                            ·
+                            ${iv.count}
+                            offen
+
+                          </span>
+
+
+                          <button
+
+                            onclick="
+                              editVote(
+                                '${safeJs(iv.name)}'
+                              )
+                            "
+
+                            class="
+                              font-bold
+                              underline
+                            "
+                          >
+
+                            ergänzen
+
+                          </button>
+
                         </div>
-                      </th>
-                    `).join('')}
-                  </tr>
-                </thead>
-                <tbody>
-                  ${dateStats.map((s, idx) => {
-                    const dObj = new Date(s.date);
-                    const dateStr = dObj.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
-                    const timeStr = dObj.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-                    
-                    // Farb-Ranking Logik
-                    let rowCl = "";
-                    if (voteList.length > 0) {
-                      if (s.score === maxScore && maxScore > 0) {
-                        rowCl = "border-l-4 border-emerald-500 bg-emerald-50/20";
-                      } else if (s.score === minScore && minScore < maxScore) {
-                        rowCl = "border-l-4 border-rose-500 bg-rose-50/10";
-                      } else if (maxScore > minScore) {
-                        rowCl = "border-l-4 border-amber-500 bg-amber-50/10";
+
+                      `
+                    )
+                    .join("")
+
+                }
+
+              </div>
+
+            `;
+
+          }
+
+
+
+          /*
+          ===============================================
+          NAME
+          ===============================================
+          */
+
+
+          html += `
+
+            <div class="mb-4">
+
+              <input
+
+                id="voterName"
+
+                placeholder="Dein Name"
+
+                class="wa-input"
+
+                value=""
+
+              >
+
+
+              <button
+
+                id="cancelEdit"
+
+                onclick="
+                  cancelEditing()
+                "
+
+                class="
+                  hidden
+                  wa-secondary
+                  text-xs
+                  mt-2
+                "
+              >
+
+                Bearbeiten abbrechen
+
+              </button>
+
+            </div>
+
+
+            <div
+              class="
+                border-y
+                border-[var(--wa-line)]
+              "
+            >
+
+          `;
+
+
+
+          /*
+          ===============================================
+          TERMINOPTIONEN
+          ===============================================
+          */
+
+
+          activePoll
+            .dates
+            .forEach(
+              (d, idx) => {
+
+
+                const fd =
+                  formatDate(d);
+
+
+                html += `
+
+                  <div class="vote-option">
+
+                    <div class="choice-row">
+
+
+                      <div class="choice-date">
+
+                        ${escapeHtml(fd.date)}
+
+                        <small>
+
+                          ${escapeHtml(fd.time)}
+                          Uhr
+
+                        </small>
+
+                      </div>
+
+
+                      <div class="choice-buttons">
+
+
+                        <button
+
+                          id="y-${idx}"
+
+                          title="Ja"
+
+                          aria-label="Ja"
+
+                          data-date="${escapeHtml(d)}"
+
+                          onclick="
+                            selectChoice(
+                              '${safeJs(d)}',
+                              'ja',
+                              'y-${idx}'
+                            )
+                          "
+
+                          class="choice-btn"
+                        >
+
+                          ✓
+
+                        </button>
+
+
+                        <button
+
+                          id="m-${idx}"
+
+                          title="Zur Not"
+
+                          aria-label="Zur Not"
+
+                          data-date="${escapeHtml(d)}"
+
+                          onclick="
+                            selectChoice(
+                              '${safeJs(d)}',
+                              'not',
+                              'm-${idx}'
+                            )
+                          "
+
+                          class="choice-btn"
+                        >
+
+                          ~
+
+                        </button>
+
+
+                        <button
+
+                          id="n-${idx}"
+
+                          title="Nein"
+
+                          aria-label="Nein"
+
+                          data-date="${escapeHtml(d)}"
+
+                          onclick="
+                            selectChoice(
+                              '${safeJs(d)}',
+                              'nein',
+                              'n-${idx}'
+                            )
+                          "
+
+                          class="choice-btn"
+                        >
+
+                          ×
+
+                        </button>
+
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                `;
+
+              }
+            );
+
+
+          html += `
+
+            </div>
+
+
+            <div
+              class="
+                flex
+                gap-2
+                text-[11px]
+                wa-subtle
+                mt-2
+                mb-4
+              "
+            >
+
+              <span>
+                ✓ Ja
+              </span>
+
+              <span>
+                ~ Zur Not
+              </span>
+
+              <span>
+                × Nein
+              </span>
+
+            </div>
+
+
+            <button
+
+              onclick="
+                saveVote()
+              "
+
+              class="wa-primary"
+            >
+
+              Stimme speichern
+
+            </button>
+
+          `;
+
+
+
+          /*
+          ===============================================
+          CHAT
+          ===============================================
+          */
+
+
+          html += `
+
+            <div
+              class="
+                mt-6
+                pt-5
+                border-t
+                border-[var(--wa-line)]
+              "
+            >
+
+              <div
+                class="
+                  font-bold
+                  text-[15px]
+                  mb-3
+                "
+              >
+
+                Chat & Kommentare
+
+              </div>
+
+
+              <div class="chat-box mb-3">
+
+          `;
+
+
+          if (
+            msgList.length === 0
+          ) {
+
+            html += `
+
+              <div
+                class="
+                  wa-subtle
+                  text-xs
+                "
+              >
+
+                Noch keine Nachrichten.
+
+              </div>
+
+            `;
+
+          } else {
+
+
+            msgList
+              .sort(
+                (a, b) =>
+                  a.timestamp -
+                  b.timestamp
+              )
+              .forEach(
+                m => {
+
+
+                  html += `
+
+                    <div class="chat-line">
+
+                      <span class="chat-name">
+
+                        ${escapeHtml(m.name)}
+
+                      </span>
+
+                      <span>
+
+                        ${escapeHtml(m.text)}
+
+                      </span>
+
+                    </div>
+
+                  `;
+
+                }
+              );
+
+          }
+
+
+          html += `
+
+              </div>
+
+          `;
+
+
+
+          /*
+          ===============================================
+          CHAT NAME AUSWAHL
+          ===============================================
+          */
+
+
+          if (
+            voteList.length > 0
+          ) {
+
+            html += `
+
+              <select
+
+                id="chatUserSelect"
+
+                onchange="
+                  toggleChatNameInput()
+                "
+
+                class="
+                  wa-input
+                  text-xs
+                  mb-2
+                "
+              >
+
+                <option
+                  value=""
+                  disabled
+                  selected
+                >
+
+                  Wer schreibt?
+
+                </option>
+
+
+                ${
+
+                  voteList
+                    .map(
+                      v => `
+
+                        <option
+                          value="${escapeHtml(v.name)}"
+                        >
+
+                          ${escapeHtml(v.name)}
+
+                        </option>
+
+                      `
+                    )
+                    .join("")
+
+                }
+
+
+                <option
+                  value="__new"
+                >
+
+                  Neuer Name...
+
+                </option>
+
+              </select>
+
+
+              <div
+
+                id="chatNewNameContainer"
+
+                class="
+                  hidden
+                  mb-2
+                "
+              >
+
+                <input
+
+                  id="chatNewNameInput"
+
+                  placeholder="Neuer Name"
+
+                  class="
+                    wa-input
+                    text-xs
+                  "
+                >
+
+              </div>
+
+            `;
+
+          } else {
+
+            html += `
+
+              <input
+
+                id="chatNewNameInput"
+
+                placeholder="Dein Name"
+
+                class="
+                  wa-input
+                  text-xs
+                  mb-2
+                "
+              >
+
+            `;
+
+          }
+
+
+
+          html += `
+
+              <div
+                class="
+                  flex
+                  gap-2
+                "
+              >
+
+                <input
+
+                  id="chatTextInput"
+
+                  placeholder="Nachricht"
+
+                  class="
+                    wa-input
+                    text-xs
+                  "
+                >
+
+
+                <button
+
+                  onclick="
+                    sendChatMessage()
+                  "
+
+                  class="
+                    px-4
+                    rounded-lg
+                    font-bold
+                    text-white
+                    bg-[var(--wa-green)]
+                    hover:bg-[var(--wa-green-dark)]
+                  "
+                >
+
+                  Senden
+
+                </button>
+
+              </div>
+
+            </div>
+
+          `;
+
+
+
+          /*
+          ===============================================
+          ERGEBNISSE
+          ===============================================
+          */
+
+
+          html += `
+
+            <div
+
+              id="resultsHeader"
+
+              class="
+                mt-6
+                pt-5
+                border-t
+                border-[var(--wa-line)]
+              "
+            >
+
+              <div
+                class="
+                  font-bold
+                  text-[15px]
+                "
+              >
+
+                Ergebnisse
+
+              </div>
+
+            </div>
+
+          `;
+
+
+          if (
+            voteList.length === 0
+          ) {
+
+            html += `
+
+              <div
+                class="
+                  wa-subtle
+                  text-xs
+                  mt-2
+                "
+              >
+
+                Noch keine Stimmen abgegeben.
+
+              </div>
+
+            `;
+
+          } else {
+
+
+            html += `
+
+              <div class="mt-2">
+
+            `;
+
+
+            dateStats.forEach(
+              s => {
+
+
+                const fd =
+                  formatDate(
+                    s.date
+                  );
+
+
+                const total =
+                  voteList.length || 1;
+
+
+                const yesPct =
+                  Math.round(
+                    (s.yes / total) * 100
+                  );
+
+
+                const maybePct =
+                  Math.round(
+                    (s.maybe / total) * 100
+                  );
+
+
+                const noPct =
+                  Math.round(
+                    (s.no / total) * 100
+                  );
+
+
+                html += `
+
+                  <div class="result-option">
+
+
+                    <div class="result-head">
+
+
+                      <div class="result-date">
+
+                        ${escapeHtml(fd.date)}
+
+                        <div
+                          class="
+                            wa-subtle
+                            text-xs
+                            font-normal
+                            mt-0.5
+                          "
+                        >
+
+                          ${escapeHtml(fd.time)}
+                          Uhr
+
+                        </div>
+
+                      </div>
+
+
+                      <div class="result-count">
+
+                        ${s.yes} Ja
+
+                      </div>
+
+
+                    </div>
+
+
+                    <div class="progress-track">
+
+                      <div
+
+                        class="progress-fill"
+
+                        style="
+                          width:${yesPct}%
+                        "
+                      >
+                      </div>
+
+                    </div>
+
+
+                    <div class="result-detail">
+
+
+                      <span class="pill">
+
+                        <i class="dot yes"></i>
+
+                        ${s.yes}
+                        Ja
+
+                      </span>
+
+
+                      <span class="pill">
+
+                        <i class="dot maybe"></i>
+
+                        ${s.maybe}
+                        Zur Not
+
+                      </span>
+
+
+                      <span class="pill">
+
+                        <i class="dot no"></i>
+
+                        ${s.no}
+                        Nein
+
+                      </span>
+
+
+                      <span>
+
+                        ${yesPct}% Ja
+
+                      </span>
+
+
+                    </div>
+
+
+                  </div>
+
+                `;
+
+              }
+            );
+
+
+            html += `
+
+              </div>
+
+
+              <button
+
+                id="toggleResultsBtn"
+
+                onclick="
+                  toggleResults()
+                "
+
+                class="
+                  w-full
+                  text-[var(--wa-green-dark)]
+                  font-bold
+                  text-sm
+                  py-3
+                  border-t
+                  border-[var(--wa-line)]
+                "
+              >
+
+                ${
+                  resultsOpen
+                    ? "Stimmen ausblenden"
+                    : "Stimmen ansehen"
+                }
+
+              </button>
+
+
+              <div
+
+                id="voteViewer"
+
+                class="
+                  viewer-panel
+                  ${resultsOpen ? "open" : ""}
+                "
+              >
+
+            `;
+
+
+
+            /*
+            =============================================
+            PERSONENDETAILS
+            =============================================
+            */
+
+
+            voteList.forEach(
+              v => {
+
+
+                html += `
+
+                  <div class="person-row">
+
+
+                    <div
+                      class="
+                        font-bold
+                        truncate
+                      "
+                    >
+
+                      ${escapeHtml(v.name)}
+
+                    </div>
+
+
+                    <div class="flex gap-1">
+
+
+                      <button
+
+                        onclick="
+                          editVote(
+                            '${safeJs(v.name)}'
+                          )
+                        "
+
+                        class="
+                          wa-secondary
+                          text-[10px]
+                          py-1
+                          px-2
+                        "
+                      >
+
+                        Bearbeiten
+
+                      </button>
+
+
+                      <button
+
+                        onclick="
+                          deleteVote(
+                            '${safeJs(v.name)}'
+                          )
+                        "
+
+                        class="
+                          text-red-600
+                          border
+                          border-red-200
+                          rounded-lg
+                          px-2
+                          py-1
+                          text-[10px]
+                          font-bold
+                        "
+                      >
+
+                        Löschen
+
+                      </button>
+
+
+                    </div>
+
+
+                  </div>
+
+                `;
+
+
+
+                activePoll
+                  .dates
+                  .forEach(
+                    d => {
+
+
+                      const fd =
+                        formatDate(d);
+
+
+                      const choice =
+                        v.choices?.[d];
+
+
+                      let answer =
+                        "offen";
+
+
+                      let color =
+                        "var(--wa-muted)";
+
+
+                      if (
+                        choice === "ja"
+                      ) {
+
+                        answer =
+                          "✓ Ja";
+
+                        color =
+                          "var(--wa-green-dark)";
+
                       }
+
+                      else if (
+                        choice === "not"
+                      ) {
+
+                        answer =
+                          "~ Zur Not";
+
+                        color =
+                          "#a66a00";
+
+                      }
+
+                      else if (
+                        choice === "nein"
+                      ) {
+
+                        answer =
+                          "× Nein";
+
+                        color =
+                          "#b42318";
+
+                      }
+
+
+                      html += `
+
+                        <div
+                          class="
+                            flex
+                            justify-between
+                            gap-3
+                            text-[11px]
+                            py-1
+                            pl-2
+                          "
+                        >
+
+                          <span class="wa-subtle">
+
+                            ${escapeHtml(fd.date)}
+                            ·
+                            ${escapeHtml(fd.time)}
+
+                          </span>
+
+
+                          <strong
+                            style="
+                              color:${color}
+                            "
+                          >
+
+                            ${answer}
+
+                          </strong>
+
+
+                        </div>
+
+                      `;
+
+                    }
+                  );
+
+              }
+            );
+
+
+            html += `
+
+              </div>
+
+            `;
+
+          }
+
+
+
+          /*
+          ===============================================
+          ADMIN BEREICH
+          ===============================================
+          */
+
+
+          html += `
+
+            <details
+
+              class="
+                mt-6
+                pt-4
+                border-t
+                border-[var(--wa-line)]
+              "
+            >
+
+
+              <summary
+
+                onclick="
+                  checkAdminPassword(event)
+                "
+
+                class="
+                  cursor-pointer
+                  select-none
+                  flex
+                  justify-between
+                  items-center
+                  text-xs
+                  font-bold
+                  wa-subtle
+                "
+              >
+
+                <span>
+                  Admin-Bereich
+                </span>
+
+                <span>
+                  ▼
+                </span>
+
+              </summary>
+
+
+              <div
+                class="
+                  admin-box
+                  mt-3
+                "
+              >
+
+
+                <!-- TITEL -->
+
+
+                <div class="admin-section">
+
+
+                  <div
+                    class="
+                      text-xs
+                      font-bold
+                      mb-2
+                    "
+                  >
+
+                    Titel ändern
+
+                  </div>
+
+
+                  <div class="flex gap-2">
+
+
+                    <input
+
+                      id="editTitleInput"
+
+                      value="${escapeHtml(activePoll.title)}"
+
+                      class="
+                        wa-input
+                        text-xs
+                      "
+                    >
+
+
+                    <button
+
+                      onclick="
+                        updatePollTitle()
+                      "
+
+                      class="
+                        wa-secondary
+                        text-xs
+                      "
+                    >
+
+                      Speichern
+
+                    </button>
+
+
+                  </div>
+
+
+                </div>
+
+
+
+                <!-- TERMINE -->
+
+
+                <div class="admin-section">
+
+
+                  <div
+                    class="
+                      text-xs
+                      font-bold
+                      mb-2
+                    "
+                  >
+
+                    Bestehende Termine
+
+                  </div>
+
+
+                  <div
+                    class="
+                      space-y-1
+                      mb-4
+                    "
+                  >
+
+
+                    ${
+
+                      activePoll
+                        .dates
+                        .map(
+                          d => {
+
+
+                            const fd =
+                              formatDate(d);
+
+
+                            return `
+
+                              <div
+                                class="
+                                  flex
+                                  justify-between
+                                  items-center
+                                  gap-3
+                                  py-1
+                                  text-xs
+                                "
+                              >
+
+                                <span class="wa-subtle">
+
+                                  ${escapeHtml(fd.date)}
+                                  ·
+                                  ${escapeHtml(fd.time)}
+
+                                </span>
+
+
+                                <button
+
+                                  onclick="
+                                    deleteDate(
+                                      '${safeJs(d)}'
+                                    )
+                                  "
+
+                                  class="
+                                    text-red-600
+                                    font-bold
+                                    text-[10px]
+                                  "
+                                >
+
+                                  Löschen
+
+                                </button>
+
+
+                              </div>
+
+                            `;
+
+                          }
+                        )
+                        .join("")
+
                     }
 
-                    return `
-                      <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition-all">
-                        <td class="p-3 text-xs font-semibold text-slate-700 min-w-[150px] whitespace-nowrap ${rowCl}">
-                          <div>${dateStr} &nbsp; ${timeStr} Uhr</div>
-                          <div class="text-[10px] text-slate-400 font-normal mt-0.5">(${s.score} Pkt.)</div>
-                        </td>
-                        ${voteList.map(v => {
-                          const choice = s.userVotes[v.name];
-                          let icon = '❌';
-                          let cl = 'text-red-500 bg-red-50/20';
-                          if (choice === 'ja') { icon = '✅'; cl = 'text-green-500 bg-green-50/20 font-bold'; }
-                          else if (choice === 'not') { icon = '🟡'; cl = 'text-yellow-500 bg-yellow-50/10'; }
-                          else if (choice === undefined) { icon = '❓'; cl = 'text-slate-300 bg-slate-50/50'; }
-                          return `<td class="p-3 text-center border-l border-slate-100 text-sm ${cl}">${icon}</td>`;
-                        }).join('')}
-                      </tr>`;
-                  }).join('')}
-                </tbody>
-              </table>
-            </div>`;
+
+                  </div>
+
+
+                  <div
+                    class="
+                      text-xs
+                      font-bold
+                      mb-2
+                    "
+                  >
+
+                    Neuen Termin hinzufügen
+
+                  </div>
+
+
+                  <div class="flex gap-2">
+
+
+                    <input
+
+                      type="datetime-local"
+
+                      id="newDateInput"
+
+                      class="
+                        wa-input
+                        text-xs
+                      "
+                    >
+
+
+                    <button
+
+                      onclick="
+                        addNewDate()
+                      "
+
+                      class="
+                        wa-secondary
+                        text-xs
+                      "
+                    >
+
+                      Hinzufügen
+
+                    </button>
+
+
+                  </div>
+
+
+                </div>
+
+
+
+                <!-- GEFAHRENBEREICH -->
+
+
+                <div class="admin-section">
+
+
+                  <div
+                    class="
+                      text-xs
+                      font-bold
+                      text-red-700
+                      mb-2
+                    "
+                  >
+
+                    Gefahrenbereich
+
+                  </div>
+
+
+                  <button
+
+                    onclick="
+                      deleteEntirePoll()
+                    "
+
+                    class="
+                      danger
+                      text-xs
+                    "
+                  >
+
+                    Gesamte Umfrage löschen
+
+                  </button>
+
+
+                </div>
+
+
+              </div>
+
+
+            </details>
+
+          `;
+
+
+
+          /*
+          ===============================================
+          HTML AUSGEBEN
+          ===============================================
+          */
+
+
+          appDiv.innerHTML =
+            html;
+
+
+
+          /*
+          ===============================================
+          BEARBEITUNG NACH SNAPSHOT WIEDERHERSTELLEN
+          ===============================================
+          */
+
+
+          if (
+            editingName
+          ) {
+
+
+            const vote =
+              voteList.find(
+                v =>
+                  v.name === editingName
+              );
+
+
+            if (vote) {
+
+
+              const voterInput =
+                document.getElementById(
+                  "voterName"
+                );
+
+
+              voterInput.value =
+                editingName;
+
+
+              voterInput.disabled =
+                true;
+
+
+              document
+                .getElementById(
+                  "cancelEdit"
+                )
+                ?.classList
+                .remove("hidden");
+
+
+              activePoll
+                .dates
+                .forEach(
+                  (d, idx) => {
+
+
+                    const choice =
+                      myChoices[d];
+
+
+                    if (
+                      choice === "ja"
+                    ) {
+
+                      document
+                        .getElementById(
+                          `y-${idx}`
+                        )
+                        ?.classList
+                        .add(
+                          "selected-yes"
+                        );
+
+                    }
+
+
+                    if (
+                      choice === "not"
+                    ) {
+
+                      document
+                        .getElementById(
+                          `m-${idx}`
+                        )
+                        ?.classList
+                        .add(
+                          "selected-maybe"
+                        );
+
+                    }
+
+
+                    if (
+                      choice === "nein"
+                    ) {
+
+                      document
+                        .getElementById(
+                          `n-${idx}`
+                        )
+                        ?.classList
+                        .add(
+                          "selected-no"
+                        );
+
+                    }
+
+                  }
+                );
+
+            }
+
+          }
+
+
         }
 
-        // Admin-Bereich
-        html += `
-          <details class="mt-6 border-t border-slate-100 pt-4">
-            <summary onclick="checkAdminPassword(event)" class="cursor-pointer text-xs font-bold text-slate-500 select-none flex justify-between items-center hover:text-slate-800 transition-all">
-              <span>⚙️ Admin-Bereich (Termine & Titel verwalten)</span>
-              <span class="text-[10px] text-slate-400">▼ Klick zum Ausklappen</span>
-            </summary>
-            <div class="mt-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-4">
-              <div class="pb-3 border-b border-slate-100">
-                <label class="text-[10px] font-bold text-slate-400 block mb-1">Titel der Umfrage ändern:</label>
-                <div class="flex gap-2">
-                  <input id="editTitleInput" value="${activePoll.title}" class="border border-slate-200 p-2 text-xs rounded-xl w-full outline-none focus:border-indigo-500 bg-white">
-                  <button onclick="updatePollTitle()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm">Speichern</button>
-                </div>
-              </div>
-              <div class="pb-3 border-b border-slate-100">
-                <label class="text-[10px] font-bold text-slate-400 block mb-1">Bestehende Termine löschen:</label>
-                <div class="space-y-1 mb-3">
-                  ${activePoll.dates.map(d => `
-                    <div class="flex justify-between items-center text-xs text-slate-500">
-                      <span>${new Date(d).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                      <button onclick="deleteDate('${d}')" class="text-red-500 hover:text-red-700 font-semibold text-[10px] transition-all">Löschen 🗑️</button>
-                    </div>
-                  `).join('')}
-                </div>
-                <label class="text-[10px] font-bold text-slate-400 block mb-1">Neuen Termin hinzufügen:</label>
-                <div class="flex gap-2">
-                  <input type="datetime-local" id="newDateInput" class="border border-slate-200 p-2 text-xs rounded-xl w-full outline-none focus:border-indigo-500 bg-white">
-                  <button onclick="addNewDate()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm">+ Hinzufügen</button>
-                </div>
-              </div>
-              <div class="pt-2">
-                <label class="text-[10px] font-bold text-red-500 block mb-1">Gefahrenbereich:</label>
-                <button onclick="deleteEntirePoll()" class="w-full bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white px-3 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm">⚠️ Gesamte Umfrage dauerhaft löschen</button>
-              </div>
-            </div>
-          </details>`;
+      );
 
-        appDiv.innerHTML = html;
-      });
     }
+
   </script>
+
 </body>
 </html>
