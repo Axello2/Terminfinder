@@ -1,4 +1,4 @@
-<!-- v1.1.0 WhatsApp-Poll-Design vom 23.08.2026 -->
+<!-- v1.1.1 vom 23.08.2026 18:46 Uhr -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -324,6 +324,61 @@
       border-bottom:none;
     }
 
+    /*
+      Laptop / Desktop:
+      Schrift 20 % größer.
+      Smartphone bleibt unverändert.
+    */
+    @media(min-width:768px){
+      html{
+        font-size:120%;
+      }
+
+      .wa-title{
+        font-size:28.8px;
+      }
+
+      .choice-date{
+        font-size:16.8px;
+      }
+
+      .choice-btn{
+        font-size:18px;
+      }
+
+      .result-date{
+        font-size:16.8px;
+      }
+
+      .result-count{
+        font-size:15.6px;
+      }
+
+      .result-detail{
+        font-size:13.2px;
+      }
+
+      .chat-line{
+        font-size:14.4px;
+      }
+
+      .person-row{
+        font-size:14.4px;
+      }
+
+      .text-\[10px\]{
+        font-size:12px !important;
+      }
+
+      .text-\[11px\]{
+        font-size:13.2px !important;
+      }
+
+      .text-\[15px\]{
+        font-size:18px !important;
+      }
+    }
+
     @media(max-width:520px){
       body{
         padding:10px;
@@ -623,13 +678,9 @@
 
 
       let myChoices = {};
-
       let editingName = null;
-
       let activePoll = null;
-
       let resultsOpen = false;
-
 
 
       /*
@@ -671,33 +722,18 @@
 
 
           if (choice === "ja") {
-
-            btn.classList.add(
-              "selected-yes"
-            );
-
+            btn.classList.add("selected-yes");
           }
-
 
           if (choice === "not") {
-
-            btn.classList.add(
-              "selected-maybe"
-            );
-
+            btn.classList.add("selected-maybe");
           }
 
-
           if (choice === "nein") {
-
-            btn.classList.add(
-              "selected-no"
-            );
-
+            btn.classList.add("selected-no");
           }
 
         };
-
 
 
       /*
@@ -741,7 +777,6 @@
             : "Stimmen ansehen";
 
       };
-
 
 
       /*
@@ -819,51 +854,27 @@
                   myChoices[d];
 
 
-                if (
-                  choice === "ja"
-                ) {
-
+                if (choice === "ja") {
                   document
-                    .getElementById(
-                      `y-${idx}`
-                    )
+                    .getElementById(`y-${idx}`)
                     ?.classList
-                    .add(
-                      "selected-yes"
-                    );
-
+                    .add("selected-yes");
                 }
 
 
-                if (
-                  choice === "not"
-                ) {
-
+                if (choice === "not") {
                   document
-                    .getElementById(
-                      `m-${idx}`
-                    )
+                    .getElementById(`m-${idx}`)
                     ?.classList
-                    .add(
-                      "selected-maybe"
-                    );
-
+                    .add("selected-maybe");
                 }
 
 
-                if (
-                  choice === "nein"
-                ) {
-
+                if (choice === "nein") {
                   document
-                    .getElementById(
-                      `n-${idx}`
-                    )
+                    .getElementById(`n-${idx}`)
                     ?.classList
-                    .add(
-                      "selected-no"
-                    );
-
+                    .add("selected-no");
                 }
 
               }
@@ -878,7 +889,6 @@
           );
 
         };
-
 
 
       /*
@@ -922,7 +932,6 @@
           );
 
         };
-
 
 
       /*
@@ -984,7 +993,6 @@
         };
 
 
-
       /*
       ===================================================
       STIMME SPEICHERN
@@ -1035,11 +1043,9 @@
             voteList.some(
 
               v =>
-                v.name
-                  .toLowerCase()
+                v.name.toLowerCase()
                 ===
-                name
-                  .toLowerCase()
+                name.toLowerCase()
 
             );
 
@@ -1060,11 +1066,9 @@
             voteList.filter(
 
               v =>
-                v.name
-                  .toLowerCase()
+                v.name.toLowerCase()
                 !==
-                name
-                  .toLowerCase()
+                name.toLowerCase()
 
             );
 
@@ -1165,7 +1169,6 @@
         };
 
 
-
       /*
       ===================================================
       TITEL ÄNDERN
@@ -1211,7 +1214,6 @@
           );
 
         };
-
 
 
       /*
@@ -1278,7 +1280,6 @@
           );
 
         };
-
 
 
       /*
@@ -1362,7 +1363,6 @@
         };
 
 
-
       /*
       ===================================================
       GESAMTE UMFRAGE LÖSCHEN
@@ -1398,7 +1398,6 @@
             window.location.pathname;
 
         };
-
 
 
       /*
@@ -1442,7 +1441,6 @@
         };
 
 
-
       /*
       ===================================================
       ADMIN PASSWORT
@@ -1484,7 +1482,6 @@
           }
 
         };
-
 
 
       /*
@@ -1610,7 +1607,6 @@
         };
 
 
-
       /*
       ===================================================
       FIRESTORE LIVE UPDATE
@@ -1705,10 +1701,12 @@
           );
 
 
-
           /*
           ===============================================
-          STATISTIK
+          STATISTIK / PUNKTE-RANKING
+          JA = 2 PUNKTE
+          ZUR NOT = 1 PUNKT
+          NEIN = 0 PUNKTE
           ===============================================
           */
 
@@ -1777,7 +1775,7 @@
 
 
                   const score =
-                    yes * 2 +
+                    (yes * 2) +
                     maybe;
 
 
@@ -1828,7 +1826,6 @@
               );
 
 
-
           /*
           ===============================================
           HTML AUFBAU
@@ -1857,7 +1854,6 @@
             </div>
 
           `;
-
 
 
           /*
@@ -1952,7 +1948,6 @@
           }
 
 
-
           /*
           ===============================================
           NAME
@@ -1962,7 +1957,7 @@
 
           html += `
 
-            <div class="mb-4">
+            <div class="mb-2">
 
               <input
 
@@ -2000,6 +1995,27 @@
             </div>
 
 
+            <!-- EINMALIGE LEGENDE DIREKT UNTER DEM NAMENSFELD -->
+
+            <div
+              class="
+                flex
+                justify-end
+                gap-4
+                text-[11px]
+                wa-subtle
+                mb-2
+                pr-1
+              "
+            >
+
+              <span>✓ Ja</span>
+              <span>~ Zur Not</span>
+              <span>× Nein</span>
+
+            </div>
+
+
             <div
               class="
                 border-y
@@ -2008,7 +2024,6 @@
             >
 
           `;
-
 
 
           /*
@@ -2147,39 +2162,13 @@
             </div>
 
 
-            <div
-              class="
-                flex
-                gap-2
-                text-[11px]
-                wa-subtle
-                mt-2
-                mb-4
-              "
-            >
-
-              <span>
-                ✓ Ja
-              </span>
-
-              <span>
-                ~ Zur Not
-              </span>
-
-              <span>
-                × Nein
-              </span>
-
-            </div>
-
-
             <button
 
               onclick="
                 saveVote()
               "
 
-              class="wa-primary"
+              class="wa-primary mt-4"
             >
 
               Stimme speichern
@@ -2187,7 +2176,6 @@
             </button>
 
           `;
-
 
 
           /*
@@ -2289,7 +2277,6 @@
               </div>
 
           `;
-
 
 
           /*
@@ -2411,7 +2398,6 @@
           }
 
 
-
           html += `
 
               <div
@@ -2459,7 +2445,6 @@
             </div>
 
           `;
-
 
 
           /*
@@ -2539,26 +2524,24 @@
                   );
 
 
-                const total =
-                  voteList.length || 1;
+                /*
+                  Maximale Punktzahl:
+                  jeder Teilnehmer kann 2 Punkte geben.
+                  
+                  Die Balkenbreite wird daraus berechnet,
+                  angezeigt werden aber nur Punkte.
+                */
+
+                const maxPossibleScore =
+                  voteList.length * 2;
 
 
-                const yesPct =
-                  Math.round(
-                    (s.yes / total) * 100
-                  );
-
-
-                const maybePct =
-                  Math.round(
-                    (s.maybe / total) * 100
-                  );
-
-
-                const noPct =
-                  Math.round(
-                    (s.no / total) * 100
-                  );
+                const scoreBarWidth =
+                  maxPossibleScore > 0
+                    ? Math.round(
+                        (s.score / maxPossibleScore) * 100
+                      )
+                    : 0;
 
 
                 html += `
@@ -2592,7 +2575,8 @@
 
                       <div class="result-count">
 
-                        ${s.yes} Ja
+                        ${s.score}
+                        ${s.score === 1 ? "Punkt" : "Punkte"}
 
                       </div>
 
@@ -2607,7 +2591,7 @@
                         class="progress-fill"
 
                         style="
-                          width:${yesPct}%
+                          width:${scoreBarWidth}%
                         "
                       >
                       </div>
@@ -2650,7 +2634,8 @@
 
                       <span>
 
-                        ${yesPct}% Ja
+                        ${s.score}
+                        ${s.score === 1 ? "Punkt" : "Punkte"}
 
                       </span>
 
@@ -2710,7 +2695,6 @@
               >
 
             `;
-
 
 
             /*
@@ -2796,7 +2780,6 @@
                   </div>
 
                 `;
-
 
 
                 activePoll
@@ -2911,7 +2894,6 @@
           }
 
 
-
           /*
           ===============================================
           ADMIN BEREICH
@@ -2969,9 +2951,6 @@
               >
 
 
-                <!-- TITEL -->
-
-
                 <div class="admin-section">
 
 
@@ -3025,10 +3004,6 @@
 
 
                 </div>
-
-
-
-                <!-- TERMINE -->
 
 
                 <div class="admin-section">
@@ -3175,10 +3150,6 @@
                 </div>
 
 
-
-                <!-- GEFAHRENBEREICH -->
-
-
                 <div class="admin-section">
 
 
@@ -3224,7 +3195,6 @@
           `;
 
 
-
           /*
           ===============================================
           HTML AUSGEBEN
@@ -3234,7 +3204,6 @@
 
           appDiv.innerHTML =
             html;
-
 
 
           /*
