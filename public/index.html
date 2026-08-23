@@ -1,4 +1,4 @@
-<!-- v1.0.5 vom 23.08.2026 04:30 Uhr -->
+<!-- v1.0.6 vom 23.08.2026 04:39 Uhr -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -202,6 +202,18 @@
         document.getElementById("chatTextInput").value = "";
       };
 
+      const getCol = (n) => {
+        let h = 0;
+        for (let i = 0; i < n.length; i++) h = n.charCodeAt(i) + ((h << 5) - h);
+        const cls = [
+          'bg-pink-100 text-pink-800', 'bg-purple-100 text-purple-800', 
+          'bg-indigo-100 text-indigo-800', 'bg-blue-100 text-blue-800', 
+          'bg-teal-100 text-teal-800', 'bg-emerald-100 text-emerald-800', 
+          'bg-orange-100 text-orange-800', 'bg-rose-100 text-rose-800'
+        ];
+        return cls[Math.abs(h) % cls.length];
+      };
+
       onSnapshot(doc(db, "polls", pollId), (snapshot) => {
         if (!snapshot.exists()) return appDiv.innerHTML = "Nicht gefunden.";
         activePoll = snapshot.data();
@@ -250,7 +262,7 @@
         });
         html += `<button onclick="saveVote()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-4 py-3 rounded-xl w-full mt-2 font-bold shadow-lg shadow-indigo-100 transition-all">Stimme speichern und Auswertung anzeigen</button>`;
 
-        // Chat Modul mit eindeutigen Namensschild-Farben
+        // Chat
         const msgList = activePoll.messages || [];
         const uniqueChatNames = [...new Set(msgList.map(m => m.name))];
         const cls = [
@@ -298,7 +310,7 @@
           </div>
         </div></div>`;
 
-        // Tabellarische Auswertung
+        // Tabellarische Auswertung (A)
         const dateStats = activePoll.dates.map(d => {
           let yes = 0, not = 0;
           const userVotes = {};
@@ -311,6 +323,9 @@
           const score = (yes * 2) + (not * 1);
           return { date: d, yes, not, score, userVotes };
         }).sort((a, b) => b.score - a.score);
+
+        const maxScore = dateStats[0]?.score || 0;
+        const minScore = dateStats[dateStats.length - 1]?.score || 0;
 
         html += `<h2 id="resultsHeader" class="text-md font-bold mt-6 border-t pt-4 text-slate-800">Ergebnisse</h2>`;
 
@@ -339,11 +354,24 @@
                     const dObj = new Date(s.date);
                     const dateStr = dObj.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
                     const timeStr = dObj.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                    
+                    // Farb-Ranking Logik
+                    let rowCl = "";
+                    if (voteList.length > 0) {
+                      if (s.score === maxScore && maxScore > 0) {
+                        rowCl = "border-l-4 border-emerald-500 bg-emerald-50/20";
+                      } else if (s.score === minScore && minScore < maxScore) {
+                        rowCl = "border-l-4 border-rose-500 bg-rose-50/10";
+                      } else if (maxScore > minScore) {
+                        rowCl = "border-l-4 border-amber-500 bg-amber-50/10";
+                      }
+                    }
+
                     return `
                       <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition-all">
-                        <td class="p-3 text-xs font-semibold text-slate-700 ${idx === 0 ? 'bg-emerald-50/30 border-l-4 border-emerald-500' : ''}">
-                          <div>${dateStr}</div>
-                          <div class="text-[10px] text-slate-500 font-bold mt-0.5">${timeStr} Uhr <span class="text-slate-400 font-normal">(${s.score} Pkt.)</span></div>
+                        <td class="p-3 text-xs font-semibold text-slate-700 min-w-[150px] whitespace-nowrap ${rowCl}">
+                          <div>${dateStr} &nbsp; ${timeStr} Uhr</div>
+                          <div class="text-[10px] text-slate-400 font-normal mt-0.5">(${s.score} Pkt.)</div>
                         </td>
                         ${voteList.map(v => {
                           const choice = s.userVotes[v.name];
